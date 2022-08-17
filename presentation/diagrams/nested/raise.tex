@@ -1,0 +1,105 @@
+\begin{tikzpicture}[font=\sffamily\tiny]
+\input{../src/nested/gdb.out}
+
+\begin{stackDiagram}[yFactor=0.35,showAddress=true]{\frameMainBegin}{\frameDefinitelyEnd}
+\callStack
+
+\begin{funFrame}[name=main,color=GreenYellow]{\frameMainBegin}{\frameMainEnd}
+\funReturnAddr{\frameMainRetaddr}
+\frameLocal{1}{\frameMainLocalOne}
+\end{funFrame}
+
+
+\ifthenelse{\step<7}
+{\trapFrame[name=ExnC,handler=\trapExnCHandler,next=\trapExnCNext,color=WildStrawberry]{\trapExnCBegin}}
+{\trapFrame[name=ExnC,handler=\trapExnCHandler,next=\trapExnCNext,color=WildStrawberry,opacity=0.25]{\trapExnCBegin}}
+\coordAtRight{exnCtrap}{\exnHandlerAfterExnCTrap}
+
+
+\ifthenelse{\step<6}
+{\trapFrame[name=ExnB,handler=\trapExnBHandler,next=\trapExnBNext,color=OrangeRed]{\trapExnBBegin}}
+{\trapFrame[name=ExnB,handler=\trapExnBHandler,next=\trapExnBNext,color=OrangeRed,opacity=0.25]{\trapExnBBegin}}
+\coordAtRight{exnBtrap}{\exnHandlerAfterExnBTrap}
+\ifthenelse{\step<4}
+{\draw [->,>=latex] (exnBtrap.east) to [out=0,in=0] (exnCtrap.east);}{}
+
+
+\ifthenelse{\step<4}
+{\begin{funFrame}[name=maybe,color=YellowGreen]{\frameMaybeBegin}{\frameMaybeEnd}}
+{\begin{funFrame}[name=maybe,color=YellowGreen,opacity=0.25]{\frameMaybeBegin}{\frameMaybeEnd}}
+\funReturnAddr{\frameMaybeRetaddr}
+\frameLocal{1}{\frameMaybeLocalOne}
+\end{funFrame}
+
+
+\ifthenelse{\step<4}
+{\begin{funFrame}[name=probably,color=Green]{\frameProbablyBegin}{\frameProbablyEnd}}
+{\begin{funFrame}[name=probably,color=Green,opacity=0.25]{\frameProbablyBegin}{\frameProbablyEnd}}
+\funReturnAddr{\frameProbablyRetaddr}
+\frameLocal{1}{\frameProbablyLocalOne}
+\end{funFrame}
+
+
+\ifthenelse{\step<3}{
+\trapFrame[name=ExnA,handler=\trapExnAHandler,next=\trapExnANext,color=Red]{\trapExnABegin}
+\coordAtRight{exnAtrap}{\exnHandlerAfterExnATrap}
+}{
+\trapFrame[name=ExnA,handler=\trapExnAHandler,next=\trapExnANext,color=Red,opacity=0.25]{\trapExnABegin}
+}
+\ifthenelse{\step=1}
+{\draw [->,>=latex] (exnAtrap.east) to [out=0,in=0] (exnBtrap.east);}{}
+
+
+\begin{funFrame}[name=definitely,color=JungleGreen,opacity=0.25]{\frameDefinitelyBegin}{\frameDefinitelyEnd}
+\funReturnAddr{\frameDefinitelyRetaddr}
+\frameLocal{1}{\frameDefinitelyLocalOne}
+\end{funFrame}
+
+
+\coordinate (bottom) at ($(stackBL) + (0,-0.5)$);
+\ifthenelse{\step=1}
+{\domainState[pos=(bottom)]{\exnHandlerAfterExnATrap}}{}
+\ifthenelse{\step>1 \and \step<5}
+{\domainState[pos=(bottom)]{\exnHandlerAfterExnBTrap}}{}
+\ifthenelse{\step>4}
+{\domainState[pos=(bottom)]{\exnHandlerAfterExnCTrap}}{}
+
+\ifthenelse{\step=1}
+{\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnAtrap.east);}{}
+\ifthenelse{\step>1 \and \step<5}
+{\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnBtrap.east);}{}
+\ifthenelse{\step>4 \and \step<7}
+{\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnCtrap.east);}{}
+
+
+\ifthenelse{\step=1}{
+\showRegister{RSP}{\rspAfterExnAMove}
+\showRegister[color=black!25]{RSP}{\frameDefinitelyEnd}
+}{}
+\ifthenelse{\step=2}{
+\showRegister{RSP}{\rspAfterExnAFirstPop}
+\showRegister[color=black!25]{RSP}{\rspAfterExnAMove}
+}{}
+\ifthenelse{\step=3}{
+\showRegister{RSP}{\rspAfterExnASecondPop}
+\showRegister[color=black!25]{RSP}{\rspAfterExnAFirstPop}
+}{}
+\ifthenelse{\step=4}{
+\showRegister{RSP}{\rspAfterExnBMove}
+\showRegister[color=black!25]{RSP}{\rspAfterExnASecondPop}
+}{}
+\ifthenelse{\step=5}{
+\showRegister{RSP}{\rspAfterExnBFirstPop}
+\showRegister[color=black!25]{RSP}{\rspAfterExnBMove}
+}{}
+\ifthenelse{\step=6}{
+\showRegister{RSP}{\rspAfterExnBSecondPop}
+\showRegister[color=black!25]{RSP}{\rspAfterExnBFirstPop}
+}{}
+\ifthenelse{\step=7}{
+\showRegister{RSP}{\rspAfterExnCSecondPop}
+}{}
+
+
+\end{stackDiagram}
+\end{tikzpicture}

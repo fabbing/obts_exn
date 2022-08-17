@@ -1,0 +1,67 @@
+\begin{tikzpicture}[font=\sffamily\tiny]
+\input{../src/assembly/gdb.out}
+
+\begin{stackDiagram}[yFactor=0.5,showAddress=true]{\doAsmBegin}{\sayHelloEnd}
+\callStack
+
+\ifthenelse{\step=1 \or \step=8}{
+\begin{funFrame}[name=do\_asm,color=GreenYellow]{\doAsmBegin}{\doAsmSavedRbp}
+}{}
+\ifthenelse{\step>1 \and \step<5}{
+\begin{funFrame}[name=do\_asm,color=GreenYellow]{\doAsmBegin}{\rspStepA}
+}{}
+\ifthenelse{\step=5}{
+\begin{funFrame}[name=do\_asm,color=GreenYellow]{\doAsmBegin}{\rspStepB}
+}{}
+\ifthenelse{\step>5 \and \step<8}{
+\begin{funFrame}[name=do\_asm,color=GreenYellow]{\doAsmBegin}{\rspStepA}
+}{}
+\funReturnAddr{\doAsmRetaddr}
+\frameLocal{1}{saved RBP}
+\ifthenelse{\step>2 \and \step<8}{
+\frameLocal{3}{\doAsmLocalTwo}
+}{}
+\ifthenelse{\step>3 \and \step<8}{
+\frameLocal{2}{\doAsmLocalOne}
+}{}
+\ifthenelse{\step=5}{
+\frameLocal{4}{\doAsmLocalThree}
+}{}
+\end{funFrame}
+
+\ifthenelse{\step=7}{
+\begin{funFrame}[name=say\_hello,color=YellowGreen]{\sayHelloBegin}{\sayHelloEnd}
+\funReturnAddr{\sayHelloRetaddr}
+\frameLocal{1}{saved RBP}
+\end{funFrame}
+}{}
+
+
+
+\ifthenelse{\step=1}{
+\showRegister{RSP}{\doAsmSavedRbp}
+}{}
+\ifthenelse{\step>1 \and \step<5}{
+\showRegister[color=Black!25]{RSP}{\doAsmSavedRbp}
+\showRegister{RSP}{\rspStepA}
+}{}
+\ifthenelse{\step=5}{
+\showRegister[color=Black!25]{RSP}{\rspStepA}
+\showRegister{RSP}{\rspStepB}
+}{}
+\ifthenelse{\step=6}{
+\showRegister[color=Black!25]{RSP}{\rspStepB}
+\showRegister{RSP}{\rspStepC}
+}{}
+\ifthenelse{\step=7}{
+\showRegister[color=Black!25]{RSP}{\rspStepC}
+\showRegister{RSP}{\sayHelloEnd}
+}{}
+\ifthenelse{\step=8}{
+\showRegister[color=Black!25]{RSP}{\rspStepC}
+\showRegister{RSP}{\doAsmSavedRbp}
+}{}
+
+
+\end{stackDiagram}
+\end{tikzpicture}

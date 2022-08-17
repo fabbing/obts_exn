@@ -1,0 +1,708 @@
+%
+% Exceptions are values
+%
+\subsection{Exceptions are values}
+\frameSubsection{pictures/Potentials.png}{- There is no spoon.}
+
+% https://dev.realworldocaml.org/error-handling.html#exceptions
+% https://dev.realworldocaml.org/runtime-memory-layout.html
+% https://v2.ocaml.org/manual/extensiblevariants.html
+\begin{frame}{Exceptions are ordinary values}
+\begin{itemize}
+\item Exceptions are ordinary values\footnotemark
+\item No longer special: an extensible variant type (\text{``}not fully defined in one place\text{''})
+\item \mintinline{ocaml}{exception Exc} is equivalent to \mintinline{ocaml}{type exn += Exc of int}
+\item Like variants, if the exception has no parameter, memory allocation isn't needed
+\item Exceptions with parameter (\mintinline{ocaml}{exception <name> of <type>}) need heap allocation
+\end{itemize}
+\footnotetext[1]{https://dev.realworldocaml.org/error-handling.html\#exceptions}
+\footnotetext[2]{https://v2.ocaml.org/manual/extensiblevariants.html}
+\end{frame}
+
+
+%
+% Takeaway #1
+%
+\subsection*{Takeaway \#1}
+\frameSubsectionTakeaway{}
+\input{takeaway.tex}
+
+
+%
+% Exception handlers
+%
+\subsection{Exception handlers}
+\frameSubsection{pictures/Agents.png}{} %{- Deploy the sentinels. Immediately.}
+
+% https://v2.ocaml.org/manual/expr.html#pattern-matching
+\begin{frame}[fragile]{Syntax}{BNF\footnotemark}
+\begin{grammar}
+<expr> ::= <value-path>
+  \alt \dots
+	\alt `match' <expr> `with' <pattern-matching>
+	\alt `try' <expr> `with' <pattern-matching>
+  \alt \dots
+
+<pattern-matching> ::= [ `|' ] <pattern> [`when' <expr>] `->' <expr> ( `|' <pattern> [`when' <expr>] `->' <expr> )
+
+<pattern> ::= <value-name>
+	\alt \dots
+	\alt `exception' <pattern>
+	\alt \dots
+\end{grammar}
+\footnotetext[1]{https://v2.ocaml.org/manual/expr.html\#pattern-matching}
+\end{frame}
+
+\begin{frame}{Example of exception handler}{Introduction}
+\begin{columns}[c]
+\begin{column}{0.6\textwidth}
+\begin{itemize}
+\item To catch exceptions, an exception handler is needed
+\item Let's see the machinery involved in installing (and removing!) one
+\end{itemize}
+\end{column}
+\begin{column}{0.4\textwidth}
+\listocaml{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Example of exception handler}{Source code}
+\begin{columns}[c]
+\begin{column}{0.6\textwidth}
+\begin{itemize}
+\item A custom exception type (\typename{ExnA})
+\item \funcname{main} is called by \funcname{camlTrap\_\_entry} with \funcarg{42} as argument
+\item \funcname{main} installs an exception handler for \typename{ExnA}
+\item \funcname{main} returns its argument incremented by one
+\item \funcname{maybe\_raise} raises \typename{ExnA} if the \localname{Should.raise} returns \funcarg{true}
+\item Otherwise \funcname{maybe\_raise} returns its argument incremented by one
+\end{itemize}
+\end{column}
+\begin{column}{0.4\textwidth}
+\listocaml{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Example of exception handler}{CMM, linear and assembly}
+\begin{columns}[c]
+\begin{column}{0.6\textwidth}
+\begin{itemize}
+% FIXME Get a better definition
+\item CMM is the lowest structured representation of code
+\item Linear is below CMM and common to all native codes
+\item The assembly emitted from linear is architecture-specific (amd64 target for x86-64 CPU)
+\end{itemize}
+\end{column}
+\begin{column}{0.4\textwidth}
+\listocaml[firstline=8,lastline=11]{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Example of exception handler}{Exception handler's code}
+\begin{columns}[c]
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item<1-> In case of exception in the body of the \mintinline{ocaml}{try ... with}, execution flow must be redirected to the handler code (where the pattern matching happens)
+\item<1-> To this end, the \mintinline{ocaml}{try ... with} installs a trap on the stack
+\begin{itemize}
+\item<1-> Installs the trap before executing the body (at the \mintinline{ocaml}{try})
+\item<1-> Removes the trap after succesfull execution of the body (at the \mintinline{ocaml}{with})
+\end{itemize}
+\item<2-> CMM doesn't let us witness those operations
+\item<3-> But linear does!
+\item<4-> Although we can't see the trap implementation (since it's architecture-specific)
+\item<5-> We have to go deeper: let's look at the disassembly of \funcname{main}
+\end{itemize}
+\smallskip
+\listocaml[firstline=8,lastline=11,highlightlines={9-10}]{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\only<1-2>{\listcmm[highlightlines={2-7}]{../src/trap/camlTrap\_\_main\_273.cmm}{main CMM}}%
+\only<3>{\listlinear[highlightlines={5-20}]{../src/trap/camlTrap\_\_main\_273.linear}{main linear}}%
+\only<4>{\listocaml[firstline=255,lastline=268]{../ocaml/asmcomp/linearize.ml}{asmcomp/linearize.ml:255}}%
+\only<5->{\listobjdump[firstline=2,lastline=36]{../src/trap/camlTrap\_\_main\_273.objdump}{main disassembly}}%
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Example of exception handler}{Stack overflow handling}
+\begin{columns}[c]
+\begin{column}{0.5\textwidth}
+\onslide*<1>{
+\begin{itemize}
+\item Let's ignore the stack overflow handling
+\item OCaml stack size is limited (always on a fiber now!)
+\item Functions that need stack space must check that creating the stack frame wouldn't cause a stack-overflow
+\item If the frame would overflow, the stack (fiber) has to be reallocated
+\end{itemize}
+\bigskip
+\listocaml[firstline=8,lastline=11]{../src/trap/trap.ml}{trap/trap.ml}
+}
+\onslide*<2>{
+\listocaml[firstline=906,lastline=915]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:906}
+\listocaml[firstline=921,lastline=931]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:921}
+}
+\end{column}
+\begin{column}{0.5\textwidth}
+\listobjdump[firstline=2,lastline=36,highlightlines={2-4,33-36}]{../src/trap/camlTrap\_\_main\_273.objdump}{main disassembly}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+%
+% Installing a trap
+%
+\subsection{Installing a trap}
+\frameSubsection{pictures/Mouse.png}{- It's a trap, get out! - Oh, no!}
+
+
+\begin{frame}{Example of exception handler}{Frame setup}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\onslide*<1-2>{
+\begin{itemize}
+\item<1-> \funcname{entry} called \funcname{main} with \mintinline{gas}{call camlTrap__main_273}: the return address into \funcname{entry} is pushed on the stack, and execution jumps to \funcname{main}
+\item<2-> Some stack space is reserved for storing \funcname{main}'s argument
+\end{itemize}
+\bigskip
+}%
+\onslide*<3>{
+\listobjdump[firstline=5,lastline=29,highlightlines={5-6}]{../src/trap/camlTrap\_\_main\_273.objdump}{main disassembly}
+\medskip
+}%
+\listocaml[firstline=8,lastline=11,highlightlines=8]{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\onslide*<1>{\providecommand\step{1}\input{diagrams/trap/trap.tex}}%
+\onslide*<2->{\providecommand\step{2}\input{diagrams/trap/trap.tex}}%
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Example of exception handler}{Entering the try...with}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item Now reaching the expression protected by the exception handler
+\begin{itemize}
+\item Before executing the call to \funcname{maybe\_raise}, the \mintinline{ocaml}{try ... with} install a trap on the stack: \funcname{push trap}
+\item If \funcname{maybe\_raise} completes without error, the trap is removed: \funcname{pop trap}
+\end{itemize}
+\end{itemize}
+\bigskip
+\listocaml[firstline=8,lastline=11,highlightlines=9]{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\only<1>{\listcmm[highlightlines=2]{../src/trap/camlTrap\_\_main\_273.cmm}{main CMM}}%
+\only<2>{\listlinear[highlightlines=5]{../src/trap/camlTrap\_\_main\_273.linear}{main linear}}%
+\only<3>{\listocaml[firstline=837,lastline=850]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:837}}%
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Constructing the trap}{Handler's address}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\onslide*<1-2>{
+\begin{itemize}
+\item<1-> The trap is a two-words object constructed on the stack right after the \funcname{main} frame
+\item<1-> It redirects the execution flow to the handler in case of an exception
+\item<2-> The address of the handler's code is pushed onto the stack
+\item<2-> The handler (pattern matching) code is part of the \funcname{main} function code
+\end{itemize}
+}
+\onslide*<3>{\listocaml[firstline=837,lastline=850,highlightlines={838-846}]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:837}}
+\onslide*<4>{\mintobjdump[firstline=5,lastline=29,highlightlines={7-8,16-27}]{../src/trap/camlTrap\_\_main\_273.objdump}}
+\medskip
+\listocaml[firstline=8,lastline=11,highlightlines=9]{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{3}\input{diagrams/trap/trap.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+% TODO notes:
+% - trap_{sp_off,barrier_off,barrier_block} -> bytecode
+% - backtrace_{pos,active,buffer} -> part II
+\begin{frame}{Introducing caml\_domain\_state}{First mention of the runtime!}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{listing}
+\onslide*<1,3>{
+\begin{itemize}
+\item<1-> \typename{caml\_domain\_state} is a C structure part of the runtime
+\item<1-> It holds information useful to the runtime to manage a domain (each domain has its \typename{caml\_domain\_state})
+\item<3-> \localname{exn\_hanlder} is a pointer to the \emph{last} installed \typename{trap}
+\end{itemize}
+}
+\onslide*<2>{\mintc[lastline=32]{src/ocaml/domain\_state.h}}
+\end{listing}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{listing}
+\onslide*<2>{\mintc[firstline=32]{src/ocaml/domain\_state.h}}
+\onslide*<3->{\listc[highlightlines={7}]{src/ocaml/domain\_state\_abbr.h}{runtime/caml/domain\_state.h}}
+\end{listing}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Constructing the trap}{Saving previous trap address}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\onslide*<1>{
+\begin{itemize}
+% TODO grey color
+\item The address of the handler's code is pushed onto the stack
+% TODO /grey color
+\item The value of \localname{exn\_handler} from \typename{caml\_domain\_state} is pushed onto the stack
+\item \localname{r14} register points to the current domain's \typename{caml\_domain\_state}
+\end{itemize}
+}
+\onslide*<2>{\listocaml[firstline=837,lastline=850,highlightlines={847-848}]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:838}}
+\onslide*<3>{\mintobjdump[firstline=5,lastline=29,highlightlines=9]{../src/trap/camlTrap\_\_main\_273.objdump}}
+\medskip
+\listocaml[firstline=8,lastline=11,highlightlines=9]{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{4}\input{diagrams/trap/trap.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Constructing the trap}{Updating exn\_handler}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\onslide*<1>{
+\begin{itemize}
+% TODO grey color
+\item The address of the handler's code is pushed onto the stack
+\item The value of \localname{exn\_handler} from \typename{caml\_domain\_state} is pushed onto the stack
+% TODO /grey color
+\item \localname{domain\_state->exn\_hanlder} has to point to the last installed trap
+\item Its value is updated to the just-constructed trap's address
+\end{itemize}
+}
+\onslide*<2>{\listocaml[firstline=837,lastline=850,highlightlines=849]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:849}}
+\onslide*<3>{\mintobjdump[firstline=5,lastline=29,highlightlines=10]{../src/trap/camlTrap\_\_main\_273.objdump}}
+\medskip
+\listocaml[firstline=8,lastline=11,highlightlines=10]{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{5}\input{diagrams/trap/trap.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{OCaml exception trap}{More details to come later!}
+\begin{itemize}
+\item On amd64, an exception trap could be represented with this C structure
+\end{itemize}
+\bigskip
+\centering{\mintc[firstline=1,lastline=6]{src/ocaml/trap\_partial.c}} % FIXME center
+\end{frame}
+
+
+%
+% Takeaway #2
+%
+\subsection*{Takeaway \#2}
+\frameSubsectionTakeaway{}
+\againframe<2>{takeaway}
+
+
+\begin{frame}{Executing the body}{Protected by the try...with}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\onslide*<1>{
+\begin{itemize}
+\item Now executing the expression protected by the \mintinline{ocaml}{try ... with}: a call to \funcname{maybe\_raise}
+\begin{itemize}
+\item Which may complete without exception: the trap has to be removed, and the handler code is not executed
+\item Which may raise \typename{ExnA}: execution flow is redirected to the handler code thanks to the trap
+\end{itemize}
+\end{itemize}
+}
+\only<2>{\mintcmm[highlightlines=2]{../src/trap/camlTrap\_\_main\_273.cmm}}%
+\only<3>{\mintlinear[firstline=2,highlightlines=7]{../src/trap/camlTrap\_\_main\_273.linear}}%
+\only<4>{\mintobjdump[firstline=5,lastline=29,highlightlines=11]{../src/trap/camlTrap\_\_main\_273.objdump}}%
+\listocaml[firstline=3,lastline=11,highlightlines={3-6,9}]{../src/trap/trap.ml}{trap/trap.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{6}\input{diagrams/trap/trap.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+%
+% Removing a trap
+%
+\subsection{Removing a trap}
+\frameSubsection{pictures/bugged.png}{- I think you're bugged.}
+
+
+\begin{frame}{maybe\_raise terminates normally}{}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\onslide*<1,3>{
+\begin{itemize}
+\item<1-> \funcname{maybe\_raise} terminates without exception
+\item<1-> Computes its return value and sets it into \regname{RAX}
+\item<3-> Increments \regname{RSP} to remove its own stack frame
+\end{itemize}
+}
+\onslide*<2>{
+\mintobjdump[firstline=5,lastline=24,highlightlines={21-22}]{../src/noraise/camlNoraise\_\_maybe\_raise\_269.objdump}
+}
+\onslide*<4>{
+\mintobjdump[firstline=5,lastline=24,highlightlines={23-24}]{../src/noraise/camlNoraise\_\_maybe\_raise\_269.objdump}
+}
+\medskip
+\only<1>{\listocaml[firstline=3,lastline=11,highlightlines={6,9}]{../src/noraise/noraise.ml}{noraise/noraise.ml}}%
+\onslide*<2->{\listocaml[firstline=3,lastline=6,highlightlines=6]{../src/noraise/noraise.ml}{noraise/noraise.ml}}%
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\onslide*<1-2>{\providecommand\step{1}\input{diagrams/noraise/noraise.tex}}
+\onslide*<3->{\providecommand\step{2}\input{diagrams/noraise/noraise.tex}}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{main removes the lingering trap}{Restoring domain\_state->exn\_handler}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\only<1>{
+\begin{itemize}
+\item \localname{domain\_state->exn\_hanlder} is restored to its previous value from the trap
+\end{itemize}
+}%
+\only<2>{
+\listocaml[firstline=851,lastline=856,highlightlines={852-853}]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:851}
+\mintlinear[firstline=2,lastline=9,highlightlines=8]{../src/noraise/camlNoraise\_\_main\_273.linear}
+}%
+\only<3>{\mintobjdump[firstline=5,lastline=32,highlightlines=12]{../src/noraise/camlNoraise\_\_main\_273.objdump}}%
+\medskip
+\listocaml[firstline=8,lastline=11,highlightlines=9]{../src/noraise/noraise.ml}{noraise/noraise.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{3}\input{diagrams/noraise/noraise.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{main removes the lingering trap}{Discarding handler address}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\only<1>{
+\begin{itemize}
+% TODO grey
+\item \localname{domain\_state->exn\_hanlder} is restored to its previous value from the trap
+% TODO /grey
+\item Discards the exception handler code address
+\end{itemize}
+}%
+\only<2>{
+\listocaml[firstline=851,lastline=856,highlightlines={854-855}]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:851}
+\mintlinear[firstline=2,lastline=9,highlightlines=8]{../src/noraise/camlNoraise\_\_main\_273.linear}
+}%
+\only<3>{\mintobjdump[firstline=5,lastline=32,highlightlines=13]{../src/noraise/camlNoraise\_\_main\_273.objdump}}%
+\medskip
+\listocaml[firstline=8,lastline=11,highlightlines=9]{../src/noraise/noraise.ml}{noraise/noraise.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{4}\input{diagrams/noraise/noraise.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{main continues}{As if the trap was never here}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\only<1>{
+\begin{itemize}
+\item \funcname{main} jumps over the exception handler code and continues its execution
+\end{itemize}
+\medskip
+\mintlinear[firstline=2,lastline=9,highlightlines=9]{../src/noraise/camlNoraise\_\_main\_273.linear}
+}%
+\only<2>{\mintobjdump[firstline=5,lastline=32,highlightlines={14,29-32}]{../src/noraise/camlNoraise\_\_main\_273.objdump}}%
+\medskip
+\listocaml[firstline=8,lastline=11,highlightlines=11]{../src/noraise/noraise.ml}{noraise/noraise.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{4}\input{diagrams/noraise/noraise.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+%
+% Raise
+%
+\subsection{Raise}
+\frameSubsection{pictures/Neo\_takeoff.png}{}
+
+\begin{frame}{maybe\_raise raises an exception}{Loading the exception}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\only<1>{
+\begin{itemize}
+\item \funcname{maybe\_raise} somehow loads the exception value into \regname{RAX}
+\end{itemize}
+}%
+\only<2>{
+\mintcmm[highlightlines=7]{../src/raise/camlRaise\_\_maybe\_raise\_269.cmm}
+}%
+\only<3>{
+\mintlinear[highlightlines={12-13}]{../src/raise/camlRaise\_\_maybe\_raise\_269.linear}
+}%
+\only<4>{
+\mintobjdump[firstline=5,lastline=24,highlightlines={14-15}]{../src/raise/camlRaise\_\_maybe\_raise\_269.objdump}
+}%
+\medskip
+\listocaml[firstline=3,lastline=6,highlightlines=5]{../src/raise/raise.ml}{raise/raise.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{1}\input{diagrams/raise/raise.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{maybe\_raise raises an exception}{Jumping to the trap}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\only<1,5>{
+\begin{itemize}
+% TODO gray
+\item \funcname{maybe\_raise} somehow loads the exception value into \regname{RAX}
+% TODO /gray
+\item \funcname{maybe\_raise} calls \typename{raise} with \typename{ExnA}
+\only<5>{
+\begin{itemize}
+\item Sets \regname{RSP} to the value of \localname{domain\_state->exn\_handler}
+\item \regname{RSP} now points to the last installed trap
+\item This effectively discards \funcname{maybe} stack frame!
+\end{itemize}
+}
+\end{itemize}
+}%
+\only<2>{
+\mintcmm[highlightlines=7]{../src/raise/camlRaise\_\_maybe\_raise\_269.cmm}
+}%
+\only<3>{
+\mintlinear[firstline=2,highlightlines=14]{../src/raise/camlRaise\_\_maybe\_raise\_269.linear}
+}%
+\only<4>{
+  \listocaml[firstline=857,lastline=870,highlightlines={865-869}]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:857}
+}%
+\only<6>{
+\listocaml[firstline=857,lastline=870,highlightlines=866]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:857}
+}%
+\only<7>{
+\mintobjdump[firstline=5,lastline=24,highlightlines=16]{../src/raise/camlRaise\_\_maybe\_raise\_269.objdump}
+}%
+\bigskip
+\listocaml[firstline=3,lastline=6,highlightlines=5]{../src/raise/raise.ml}{raise/raise.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{2}\input{diagrams/raise/raise.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{maybe\_raise raises an exception}{Restoring exn\_handler}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\only<1>{
+\begin{itemize}
+% TODO gray
+\item \funcname{maybe\_raise} somehow loads the exception value into \regname{RAX}
+\item \funcname{maybe\_raise} calls \typename{raise} with \typename{ExnA}
+\begin{itemize}
+\item Sets \regname{RSP} to the value of \localname{domain\_state->exn\_handler}
+% TODO /gray
+\item Restores \localname{domain\_state->exn\_handler} from the trap
+\item \localname{domain\_state->exn\_handler} now holds the value from before the trap was installed
+\end{itemize}
+\end{itemize}
+}%
+\only<2>{
+\listocaml[firstline=857,lastline=870,highlightlines=867]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:857}
+}%
+\only<3>{
+\mintobjdump[firstline=5,lastline=24,highlightlines=17]{../src/raise/camlRaise\_\_maybe\_raise\_269.objdump}
+}%
+\bigskip
+\listocaml[firstline=3,lastline=6,highlightlines=5]{../src/raise/raise.ml}{raise/raise.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{3}\input{diagrams/raise/raise.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{maybe\_raise raises an exception}{Jumping to the handler code}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\only<1>{
+\begin{itemize}
+% TODO gray
+\item \funcname{maybe\_raise} somehow loads the exception value into \regname{RAX}
+\item \funcname{maybe\_raise} calls \typename{raise} with \typename{ExnA}
+\begin{itemize}
+\item Sets \regname{RSP} to the value of \localname{domain\_state->exn\_handler}
+\item Restores \localname{domain\_state->exn\_handler} from the trap
+% TODO /gray
+\item The execution flow jumps to the handler code inside \funcname{main} function
+\item The trap is now completely removed from the stack!
+\end{itemize}
+\end{itemize}
+}%
+\only<2>{
+\listocaml[firstline=857,lastline=870,highlightlines={868-869}]{../ocaml/asmcomp/amd64/emit.mlp}{asmcomp/amd64/emit.mlp:857}
+}%
+\only<3>{
+\mintobjdump[firstline=5,lastline=24,highlightlines={18-19}]{../src/raise/camlRaise\_\_maybe\_raise\_269.objdump}
+}%
+\bigskip
+\listocaml[firstline=3,lastline=11,highlightlines=5]{../src/raise/raise.ml}{raise/raise.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{4}\input{diagrams/raise/raise.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{maybe\_raise raises an exception}{Executing the handler code}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\only<1>{
+\begin{itemize}
+% TODO gray
+\item \funcname{maybe\_raise} somehow loads the exception value into \regname{RAX}
+\item \funcname{maybe\_raise} calls \typename{raise} with \typename{ExnA}
+\begin{itemize}
+\item Sets \regname{RSP} to the value of \localname{domain\_state->exn\_handler}
+\item Restores \localname{domain\_state->exn\_handler} from the trap
+\item The execution flow jumps to the handler code inside \funcname{main} function
+\item The trap is now completely removed from the stack!
+\end{itemize}
+% TODO /gray
+\item The handler pattern matches against the caught exception
+\end{itemize}
+}%
+\only<2>{
+\mintcmm[highlightlines={3-7}]{../src/raise/camlRaise\_\_main\_273.cmm}
+}%
+\only<3>{
+\mintlinear[firstline=2,lastline=32,highlightlines={11-20}]{../src/raise/camlRaise\_\_main\_273.linear}
+}%
+\only<4>{
+\mintobjdump[firstline=5,lastline=32,highlightlines={16-27}]{../src/raise/camlRaise\_\_main\_273.objdump}
+}%
+\bigskip
+\listocaml[firstline=8,lastline=11,highlightlines=10]{../src/raise/raise.ml}{raise/raise.ml}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\providecommand\step{4}\input{diagrams/raise/raise.tex}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Aside}{Comparison with C++ exceptions}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item RAII: Resource Acquisition Is Initialization
+\begin{itemize}
+\item Bind the life cycle of a resource that must be acquired to the lifetime of an object
+\item Not only about allocated memory: also file descriptors, mutexes\dots
+\item Guarante exception safety
+\end{itemize}
+\item Raising an exception causes stack unwinding
+\item Objects of an unwinded function are destructed (in reverse order of construction)
+\item Destruction of a RAII object releases the associated ressource
+\end{itemize}
+\only<2>{
+\bigskip
+\inputminted[fontsize=\footnotesize]{text}{src/cpp/out.txt}
+}%
+\end{column}
+\begin{column}{0.5\textwidth}
+\mintcpp[firstline=5]{src/cpp/raii.cpp}
+\end{column}
+\end{columns}
+\footnotetext[1]{LousyString is incorrect by the \href{https://en.cppreference.com/w/cpp/language/rule\_of\_three}{rule of three/five/zero}}
+\end{frame}
+% https://en.cppreference.com/w/cpp/language/raii
+
+
+\begin{frame}{Finalization}{Reproducing frame unwinding behaviour}
+\text{``}Finalization can be performed by trapping all exceptions, performing the finalization, then re-raising the exception.\text{''} \footnotemark[1]
+\bigskip
+\centering
+\mintocaml{src/ocaml/finalization.ml}
+\footnotetext[1]{\url{https://v2.ocaml.org/manual/coreexamples.html\#s\%3Aexceptions}}
+\end{frame}
+
+
+%
+% Takeaway #3
+%
+\subsection*{Takeaway \#3}
+\frameSubsectionTakeaway{}
+\againframe<3>{takeaway}
+
+
+%
+% Questions?
+%
+\subsection*{Questions?}
+\frameSubsection{pictures/show\_me.png}{- I know kung fu. - Show me.}
+
+\begin{frame}{Exception handler and tail (recursive) calls}{Which one(s) is (are) tail-recursive? Why?}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\listocaml[firstline=7,lastline=13]{../src/tailrec/ex1/example.ml}{tailrec/ex1}
+\medskip
+\listocaml[firstline=7,lastline=14]{../src/tailrec/ex2/example.ml}{tailrec/ex2}
+\end{column}
+\begin{column}{0.55\textwidth}
+\centering
+\only<2>{\listlinear[firstline=2,highlightlines={10-19}]{../src/tailrec/ex1/camlExample\_\_f\_272.linear}{tailrec/ex1}}%
+\only<3>{\listobjdump[firstline=5,lastline=32,highlightlines={14-23}]{../src/tailrec/ex1/camlExample\_\_f\_272.objdump}{tailrec/ex1}}%
+\only<4>{\providecommand\step{1}\input{diagrams/tailrec/ex1.tex}}%
+\only<5>{\providecommand\step{2}\input{diagrams/tailrec/ex1.tex}}%
+\only<6>{\providecommand\step{3}\input{diagrams/tailrec/ex1.tex}}%
+\only<7>{\providecommand\step{4}\input{diagrams/tailrec/ex1.tex}}%
+\only<9>{\listlinear[firstline=2,highlightlines={12-17,26}]{../src/tailrec/ex2/camlExample\_\_f\_272.linear}{tailrec/ex2}}%
+\end{column}
+\end{columns}
+\end{frame}
+

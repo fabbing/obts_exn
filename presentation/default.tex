@@ -1,0 +1,166 @@
+%
+% Runtime's default exception handler
+%
+\subsection*{Runtime's default exception handler}
+\frameSubsection{pictures/The\_Architect.png}{}
+
+
+\begin{frame}{Default exception handler}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item \localname{domain\_state->exn\_hanlder} points to a trap located before \funcname{entry}!
+\item What installed this very first trap there?
+\end{itemize}
+\bigskip
+\listocaml{../src/default/default.ml}{default/default.ml}
+\bigskip
+\inputminted[fontsize=\footnotesize]{text}{../src/default/default.out}
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\only<1>{\providecommand\step{0}\input{diagrams/default/default.tex}}%
+\only<2>{\providecommand\step{4}\input{diagrams/default/default.tex}}%
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Startup}{How did we get there by the way?}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\begin{itemize}
+\item The entry point address of the binary is \funcname{main} (\funcname{\_start}) from the runtime
+\item The program starts like a C program:
+\begin{itemize}
+\item \funcname{caml\_start\_program}
+\item \funcname{caml\_startup\_common}
+\item \funcname{caml\_startup\_exn}
+\item \funcname{caml\_startup}
+\item \funcname{caml\_main}
+\item \funcname{main}
+\end{itemize}
+%\item \funcname{caml\_startup\_common}: initializes GC, domains \dots
+% Also: codefrag, locale, custom opeartions, frame_descr, signals, stack
+\item \funcname{caml\_start\_program} is the transition point between the C realm and the OCaml one
+\end{itemize}
+\bigskip
+\listocaml{../src/default/default.ml}{default/default.ml}
+\end{column}
+\begin{column}{0.55\textwidth}
+\listasm[lastline=24,highlightlines={22-24}]{src/ocaml/caml\_start\_program.s}{runtime/amd64.S:604}
+\end{column}
+\end{columns}
+\end{frame}
+
+
+\begin{frame}{Setup to jump into OCaml entry point}{\funcname{caml\_start\_program} initializes the main fiber}
+\begin{columns}
+\begin{column}{0.6\textwidth}
+\only<1,3,5>{
+\begin{itemize}
+\item<1-> Stores information to allow switching from OCaml stack to the C stack
+\item<3-> Constructs the default exception handler
+\item<5-> Switches to the OCaml stack and calls \funcname{caml\_program}
+\end{itemize}
+\bigskip
+\listocaml{../src/default/default.ml}{default/default.ml}
+}%
+\only<2>{
+\listasm[firstline=22,lastline=41,highlightlines={25-27}]{src/ocaml/caml\_start\_program.s}{caml\_start\_program}
+}%
+\only<4>{
+\mintasm[firstline=22,lastline=41,highlightlines={31-38}]{src/ocaml/caml\_start\_program.s}
+\listasm[firstline=66,lastline=72]{src/ocaml/caml\_start\_program.s}{caml\_start\_program}
+}%
+\only<6>{
+\listasm[firstline=22,lastline=41,highlightlines={39-41}]{src/ocaml/caml\_start\_program.s}{caml\_start\_program}
+}%
+\end{column}
+\begin{column}{0.4\textwidth}
+\centering
+\only<1-2>{\providecommand\step{2}\input{diagrams/default/default.tex}}%
+\only<3-5>{\providecommand\step{3}\input{diagrams/default/default.tex}}%
+\onslide*<6->{\providecommand\step{4}\input{diagrams/default/default.tex}}%
+\end{column}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Executing the OCaml program}{And raising an exception without handler}
+\begin{columns}
+\begin{column}{0.6\textwidth}
+\only<1-3>{
+\begin{itemize}
+\item<1-> Execution continues with OCaml code
+\begin{itemize}
+\item \funcname{camlDefault\_\_main\_269}
+\item \funcname{camlDefault\_\_entry}
+\item \funcname{caml\_program}
+\end{itemize}
+\item<1-> \funcname{camlDefault\_\_main\_269} raises a \typename{Failure} exception
+\item<1-> \typename{Failure} is caught by \funcname{caml\_start\_program}
+\begin{itemize}
+\item<1-> The handler set the 2nd LSB of the exception value to \funcarg{1}
+\item<3-> And then forces \funcname{caml\_start\_program} to terminate
+\end{itemize}
+\end{itemize}
+}
+\bigskip
+\only<1,3>{\listocaml[highlightlines=3]{../src/default/default.ml}{default/default.ml}}%
+\only<2>{\listasm[firstline=66,lastline=72,highlightlines=69]{src/ocaml/caml\_start\_program.s}{caml\_start\_program}}%
+\end{column}
+\begin{column}{0.4\textwidth}
+\centering
+\providecommand\step{4}\input{diagrams/default/default.tex}
+\end{column}
+\end{columns}
+\end{frame}
+%\only<>{\listasm[firstline=47,lastline=65]{src/ocaml/caml\_start\_program.s}{caml\_start\_program}}
+
+
+\begin{frame}{Back to C}{Clean up, complain and terminate}
+\begin{columns}
+\begin{column}{0.45\textwidth}
+\begin{itemize}
+\item Backtrace:
+\begin{itemize}
+\item \funcname{caml\_start\_program} $\rightarrow$ OCaml code
+\item \funcname{caml\_startup\_common}
+\item \funcname{caml\_startup\_exn}
+\item \funcname{caml\_startup}
+\item \funcname{caml\_main}
+\item \funcname{main}
+\end{itemize}
+\smallskip
+\item \funcname{caml\_startup} checks the return value of \funcname{caml\_startup\_exn}
+\begin{itemize}
+\item The return value has been specially marked by \funcname{caml\_start\_program} handler
+\item Calls \funcname{caml\_fatal\_uncaught\_exception}
+\end{itemize}
+\item<2-> \funcname{caml\_fatal\_uncaught\_exception} either
+\begin{itemize}
+\item<2-> Calls the user custom uncaught exception handler, if set with \mintinline{ocaml}{Printexc.set_uncaught_exception_handler fn}\footnotemark
+\item<2-> Or falls back to the default one
+\item<2-> Which notifies about the uncaught exception
+\end{itemize}
+\item<4-> Terminates the program either with \funcname{abort} or with a non-zero exit code
+\end{itemize}
+\end{column}
+\begin{column}{0.55\textwidth}
+\only<1>{
+\listc[firstline=84,lastline=89,highlightlines=88]{../ocaml/runtime/caml/mlvalues.h}{runtime/caml/mlvalues.h:84}
+\listc[firstline=138,lastline=143,highlightlines={141-142}]{../ocaml/runtime/startup\_nat.c}{runtime/startup\_nat.c:138}
+}%
+\only<2>{
+\listc[firstline=138,highlightlines={147,149}]{../ocaml/runtime/printexc.c}{runtime/printexc.c:138}
+}%
+\only<3>{
+\listc[firstline=110,lastline=134,highlightlines=129]{../ocaml/runtime/printexc.c}{runtime/printexc.c:138}
+}%
+\only<4>{
+\listc[firstline=138,highlightlines={152,154}]{../ocaml/runtime/printexc.c}{runtime/printexc.c:138}
+}%
+\end{column}
+\end{columns}
+\footnotetext[1]{\url{https://v2.ocaml.org/api/Printexc.html\#1\_Uncaughtexceptions}}
+\end{frame}

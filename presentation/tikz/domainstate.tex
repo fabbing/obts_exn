@@ -1,0 +1,60 @@
+\pgfkeys{
+/domainState/.is family,
+/domainState,
+default/.style={pos={(0,-4)},xFactor=3.8,yFactor=0.05},
+pos/.estore in=\pos,
+xFactor/.estore in=\xFactor,
+yFactor/.estore in=\yFactor,
+}
+
+\newcommand{\domainStateCommon}[1][]{
+\pgfkeys{/domainState,default,#1}%
+
+\tikzset{
+header/.style={
+anchor=north west,
+minimum width={\xFactor * 1cm},
+text height={\yFactor * 1cm},
+fill=black!10},
+fields/.style={
+ampersand replacement=\&,
+matrix anchor=north,
+nodes={anchor=base,align=left,inner xsep=0cm, inner ysep=0.1cm},
+text width={((\xFactor * 1cm) / 2)},
+text height={\yFactor * 1cm},
+inner xsep=0cm,
+inner ysep=0cm}
+}
+
+\node (header) at \pos [header] {caml\_domain\_state};
+}
+
+\newcommand{\domainState}[2][]{{
+% #2 -> exn_handler value
+
+\domainStateCommon[#1]{}
+
+\matrix (fields) [fields] at (header.south)
+{
+\node (exnHandlerLeft) {exn_handler:}; \& \node (exnHandlerRight) {0x\xintDecToHex{#2}}; \\
+};
+
+\draw [draw,fill=black,opacity=0.05] (header.north west) rectangle (fields.south east);
+}}
+
+\newcommand{\domainStateBacktrace}[4][]{{
+% #2 -> exn_handler value
+% #3 -> backtrace_buffer
+% #4 -> backtrace_pos
+
+\domainStateCommon[#1]{}
+
+\matrix (fields) [fields] at (header.south)
+{
+\node (exnHandlerLeft) {exn_handler:}; \& \node (exnHandlerRight) {0x\xintDecToHex{#2}}; \\
+\node {backtrace\_buffer:}; \& \node {#3}; \\
+\node {backtrace\_pos:}; \& \node {#4}; \\
+};
+
+\draw [draw,fill=black,opacity=0.05] (header.north west) rectangle (fields.south east);
+}}

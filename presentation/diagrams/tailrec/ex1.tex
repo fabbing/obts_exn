@@ -1,0 +1,52 @@
+\begin{tikzpicture}[font=\sffamily\tiny]
+\input{../src/tailrec/ex1/gdb.out}
+
+\begin{stackDiagram}[yFactor=0.35,showAddress=true]{\frameEntryBegin}{\frameFEndvD}
+\callStack
+
+\begin{funFrame}[name=entry,color=GreenYellow]{\frameEntryBegin}{\frameEntryEnd}
+\funReturnAddr{\frameEntryRetaddr}
+\end{funFrame}
+
+
+\begin{funFrame}[name=f,color=YellowGreen]{\frameFBeginvA}{\frameFEndvA}
+\funReturnAddr{\frameFRetaddrvA}
+\end{funFrame}
+
+\trapFrame[name=Trap,handler=\trapHandlervA,next=\trapNextvA,color=WildStrawberry]{\trapBeginvA}
+\coordAtRight{trapA}{\trapEndvA}
+
+
+\ifthenelse{\step>1}{
+\begin{funFrame}[name=f,color=Green]{\frameFBeginvB}{\frameFEndvB}
+\funReturnAddr{\frameFRetaddrvB}
+\end{funFrame}
+
+\trapFrame[name=Trap,handler=\trapHandlervB,next=\trapNextvB,color=OrangeRed]{\trapBeginvB}
+\coordAtRight{trapB}{\trapEndvB}
+% No spoilers!
+%\draw [->,>=latex] (trapB.east) to [out=0,in=0] (trapA.east);
+}{}
+
+
+\ifthenelse{\step>2}{
+\begin{funFrame}[name=f,color=JungleGreen]{\frameFBeginvC}{\frameFEndvC}
+\funReturnAddr{\frameFRetaddrvC}
+\end{funFrame}
+
+\trapFrame[name=Trap,handler=\trapHandlervC,next=\trapNextvC,color=Red]{\trapBeginvC}
+\coordAtRight{trapC}{\trapEndvC}
+% No spoilers!
+%\draw [->,>=latex] (trapC.east) to [out=0,in=0] (trapB.east);
+}{}
+
+
+\ifthenelse{\step>3}{
+\begin{funFrame}[name=f,color=SeaGreen]{\frameFBeginvD}{\frameFEndvD}
+\funReturnAddr{\frameFRetaddrvD}
+\end{funFrame}
+}{}
+
+
+\end{stackDiagram}
+\end{tikzpicture}

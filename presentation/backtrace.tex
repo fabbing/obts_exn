@@ -1,0 +1,227 @@
+\subsection{Backtrace}
+
+%\begin{frame}[fragile]
+%\frametitle{-g flag} % FIXME
+%\begin{verbatim}
+%-g Record debugging information for exception backtrace
+%\end{verbatim}
+%\end{frame}
+
+\begin{frame}{Source code}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item Same code but this time we compile using debugging information (-g)
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \listocaml[firstline=9,lastline=34]{../src/backtrace/backtrace.ml}{backtrace/backtrace.ml}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{CMM and disassembly of \funcname{definitely\_raise}}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item<1-> Impact of compiling with debugging information (-g): the CMM no longer uses \funcname{raise\_notrace} to raise the exception but \funcname{raise}
+        \item<2-> Disassembly shows \funcname{raise} is actually a call to \funcname{caml\_raise\_exn}, an assembly function provided by the runtime
+      \end{itemize}
+      \bigskip
+      \mintocaml[firstline=9,lastline=13,highlightlines=12]{../src/backtrace/backtrace.ml}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \onslide*<1>{
+        \mintcmm[highlightlines=5]{../src/backtrace/camlBacktrace\_\_definitely\_raise\_347.cmm}
+      }
+      \onslide*<2>{
+        \mintobjdump[firstline=2,highlightlines=14]{../src/backtrace/camlBacktrace\_\_definitely\_raise\_347.objdump}
+      }
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Raise}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \onslide*<1>{
+        \begin{itemize}
+          \item raising the exceptino is performed using \funcname{caml\_raise\_exn}
+          \item \funcname{caml\_raise\_exn} is an assembly function provided by the runtime
+          \item \funcname{caml\_raise\_exn} is architecture specific
+        \end{itemize}
+      }
+      \onslide*<2>{
+        \mintobjdump[firstline=2,highlightlines=14]{../src/backtrace/camlBacktrace\_\_definitely\_raise\_347.objdump}
+      }
+      \bigskip
+      \mintocaml[firstline=9,lastline=13,highlightlines=12]{../src/backtrace/backtrace.ml}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \providecommand\step{1}\input{diagrams/backtrace/backtrace.tex}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{caml\_domain\_state}
+\begin{columns}
+\begin{column}{0.5\textwidth}
+\begin{listing}
+\onslide*<1>{\mintc[lastline=32,highlightlines={7}]{src/ocaml/domain\_state.h}}
+\onslide*<2>{
+\begin{itemize}
+\item \localname{backtrace\_active} ...
+\end{itemize}
+}
+\end{listing}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{listing}
+\onslide*<1>{\mintc[firstline=32]{src/ocaml/domain\_state.h}}
+\onslide*<2->{\mintc[highlightlines={7}]{src/ocaml/domain\_state\_abbr.h}}
+\caption{runtime/caml/domain\_state.h}
+\end{listing}
+\end{column}
+\end{columns}
+\end{frame}
+
+\newcommand\listAmdSixtyFour[1][]{
+  \listasm[firstline=702,lastline=725,#1]{../ocaml/runtime/amd64.S}{runtime/amd64.S}}
+\begin{frame}{Introducing \funcname{caml\_raise\_exn}}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item<1-> First checks if exception backtrace should be recorded
+          \begin{itemize}
+            \item \funcname{OCAMLRUNPARAM}=b environment variable
+            \item \mintinline{ocaml}{Printexc.record_backtrace : bool -> unit} \footnotemark
+          \end{itemize}
+        \item<2-> If not, standard trap behaviour
+          \begin{itemize}
+            \item Sets \regname{RSP} to \localname{domain\_state->exn\_handler} value
+            \item Restores \localname{domain\_state->exn\_handler} from trap
+            \item Jumps with \funcname{ret} (same effect as using \funcname{pop} and \funcname{jmp})
+          \end{itemize}
+        \item<3-> Switches stack to execute C code
+        \item<4-> Calls \funcname{caml\_stash\_backtrace}, a C function of the runtime, with
+          \begin{itemize}
+            \item \funcarg{exn}: exception value
+            \item \funcarg{pc}: code address of raising point
+            \item \funcarg{sp}: lower stack address of raising function
+            \item \funcarg{trapsp}: stack address of next handler
+          \end{itemize}
+      \end{itemize}
+      \bigskip
+      \mintocaml[firstline=9,lastline=13,highlightlines=12]{../src/backtrace/backtrace.ml}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \onslide*<1,3-4>{
+        \mintc[firstline=190,lastline=192]{../ocaml/runtime/amd64.S}
+        \mintc[firstline=234,lastline=237]{../ocaml/runtime/amd64.S}
+      }
+      \onslide*<2>{
+        \mintc[firstline=190,lastline=192,highlightlines={191-192}]{../ocaml/runtime/amd64.S}
+        \mintc[firstline=234,lastline=237,highlightlines={235-237}]{../ocaml/runtime/amd64.S}
+      }
+      \onslide*<1>{\listAmdSixtyFour[highlightlines=705]{}}
+      \onslide*<2>{\listAmdSixtyFour[highlightlines={707-708}]{}}
+      \onslide*<3>{\listAmdSixtyFour[highlightlines={712-714}]{}}
+      \onslide*<4>{\listAmdSixtyFour[highlightlines={715-720}]{}}
+      \onslide*<5>{\providecommand\step{2}\input{diagrams/backtrace/backtrace.tex}}
+    \end{column}
+  \end{columns}
+  \footnotetext[1]{https://v2.ocaml.org/api/Printexc.html}
+\end{frame}
+
+
+\newcommand\listStashBacktrace[1][]{
+  \listc[firstline=91,lastline=120,#1]{../ocaml/runtime/backtrace\_nat.c}{runtime/backtrace\_nat.c:91}}
+\begin{frame}{Introducing \funcname{caml\_stash\_backtrace}}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item<1-> A C function provided by the runtime (native code specific)
+        \item<1-> Purpose: scans the stack between two addresses in order to collect informations on discovered function frames
+        \item<3-> Uses the same technique and informations that the GC use to scan the roots on the stack
+        \item<3-> \typename{frame\_descr} holds lot of informations, only need the frame size here
+        \item<4-> Store a pointer \typename{frame\_descr} to each discovered in \localname{domain\_state->backtrace\_buffer}
+      \end{itemize}
+      \onslide*<2>{
+        \smallskip
+        \listc[firstline=85,lastline=90]{../ocaml/runtime/backtrace\_nat.c}{runtime/backtrace\_nat.c:85}
+      }
+      \onslide*<3>{
+        \smallskip
+        \listocaml[firstline=111,lastline=124]{../ocaml/asmcomp/emitaux.ml}{asmcomp/emitaux.ml:111}
+      }
+      \onslide*<1-2,4->{
+        \bigskip
+        \mintocaml[firstline=9,lastline=13,highlightlines=12]{../src/backtrace/backtrace.ml}
+      }
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \onslide*<1-2>{\listStashBacktrace{}}
+      \onslide*<3>{\listStashBacktrace[highlightlines={94,106,109-110}]{}}
+      \onslide*<4>{\providecommand\step{2}\input{diagrams/backtrace/backtrace.tex}}
+      \onslide*<5>{\providecommand\step{3}\input{diagrams/backtrace/backtrace.tex}}
+      \onslide*<6>{\providecommand\step{4}\input{diagrams/backtrace/backtrace.tex}}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Control returns to \funcname{caml\_raise\_exn}}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \onslide*<1>{
+        \begin{itemize}
+          \item \funcname{caml\_stash\_backtrace} completed
+          \item Pops the trap and jump to \typename{ExnA} handler's code
+        \end{itemize}
+      }
+      \onslide*<2>{\listAmdSixtyFour[highlightlines={722-723}]}
+      \bigskip
+      \mintocaml[firstline=9,lastline=13,highlightlines=12]{../src/backtrace/backtrace.ml}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \providecommand\step{5}\input{diagrams/backtrace/backtrace.tex}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{\typename{ExnA} handler doesn't match}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \onslide*<1,3>{
+        \begin{itemize}
+          \item<1-> Fancy match\_with
+          \item<1-> No match
+          \item<3-> Reraise
+        \end{itemize}
+      }
+      \onslide*<2>{\mintcmm[highlightlines={10-18}]{../src/backtrace/camlBacktrace\_\_probably\_raise\_351.cmm}}
+      \medskip
+      \onslide*<1->{\mintocaml[firstline=15,lastline=21,highlightlines={18-21}]{../src/backtrace/backtrace.ml}}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \onslide*<1>{\providecommand\step{5}\input{diagrams/backtrace/backtrace.tex}}
+      \onslide*<2->{\providecommand\step{6}\input{diagrams/backtrace/backtrace.tex}}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+
+%\onslide*<2>{\providecommand\step{2}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<3>{\providecommand\step{3}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<4>{\providecommand\step{4}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<5>{\providecommand\step{5}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<6>{\providecommand\step{6}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<7>{\providecommand\step{7}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<8>{\providecommand\step{8}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<9>{\providecommand\step{9}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<10>{\providecommand\step{10}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<11>{\providecommand\step{11}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<12>{\providecommand\step{12}\input{diagrams/backtrace/backtrace.tex}}
+%\onslide*<13>{\providecommand\step{13}\input{diagrams/backtrace/backtrace.tex}}
+
+
+\subsection{raise\_notrace}

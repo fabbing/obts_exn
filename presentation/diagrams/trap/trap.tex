@@ -1,0 +1,76 @@
+\begin{tikzpicture}[font=\sffamily\tiny]
+\input{../src/trap/gdb.out}
+
+\newcommand\trapEnd{\xinteval{\trapBegin - 2 * \wordSize}}
+\newcommand\regRspStepOne{\xinteval{\frameMainBegin - 1 * \wordSize}}
+\newcommand\regRspStepTwo{\xinteval{\frameMainBegin - 2 * \wordSize}}
+\newcommand\regRspStepThree{\xinteval{\frameMainBegin - 3 * \wordSize}}
+\newcommand\regRspStepFour{\xinteval{\frameMainBegin - 4 * \wordSize}}
+
+
+\begin{stackDiagram}[yFactor=0.4,showAddress=true]{\frameEntryBegin}{\frameMaybeEnd}
+\callStack
+
+\begin{funFrame}[name=entry,retaddr=\frameEntryRetaddr,color=GreenYellow]{\frameEntryBegin}{\frameEntryEnd}
+\end{funFrame}
+
+\ifthenelse{\step=1}
+{\begin{funFrame}[color=YellowGreen]{\frameMainBegin}{\regRspStepOne}}
+{\begin{funFrame}[name=main,color=YellowGreen]{\frameMainBegin}{\frameMainEnd}}
+\funReturnAddr{\frameMainRetaddr}
+\ifthenelse{\step=1}
+{}{\frameLocal{1}{\frameMainLocalOne}}
+\end{funFrame}
+
+
+\ifthenelse{\step=3 \or \step=4}
+{\frameLocalAt{\regRspStepThree}{\trapHandler}}{}
+\ifthenelse{\step=4}
+{\frameLocalAt[hex=true]{\regRspStepFour}{\trapNext}}{}
+\ifthenelse{\step>4}
+{\trapFrame[name=trap,handler=\trapHandler,next=\trapNext,color=WildStrawberry]{\trapBegin}}{}
+
+\ifthenelse{\step=6}{
+\begin{funFrame}[name=maybe,color=Green]{\frameMaybeBegin}{\frameMaybeEnd}
+\funReturnAddr{\frameMaybeRetaddr}
+\frameLocal{1}{\frameMaybeLocalOne}
+\end{funFrame}
+}{}
+
+
+\ifthenelse{\step=1}{
+\showRegister[color=black!25]{RSP}{\frameMainBegin}
+\showRegister{RSP}{\regRspStepOne}
+}{}
+\ifthenelse{\step=2}{
+\showRegister[color=black!25]{RSP}{\regRspStepOne}
+\showRegister{RSP}{\regRspStepTwo}
+}{}
+\ifthenelse{\step=3}{
+\showRegister[color=black!25]{RSP}{\regRspStepTwo}
+\showRegister{RSP}{\regRspStepThree}
+}{}
+\ifthenelse{\step>3 \and \step<6}{
+\showRegister[color=black!25]{RSP}{\regRspStepThree}
+\showRegister{RSP}{\regRspStepFour}
+}{}
+\ifthenelse{\step=6}{
+\showRegister[color=black!25]{RSP}{\regRspStepFour}
+\showRegister{RSP}{\frameMaybeEnd}
+}{}
+
+
+\coordinate (bottom) at ($(stackBL) + (0,-0.5)$);
+
+\ifthenelse{\step=4}
+{\domainState[pos=(bottom)]{\exnHandlerBeforeTrap}}{}
+
+\ifthenelse{\step>4}{
+\domainState[pos=(bottom)]{\exnHandlerAfterTrap}
+\coordAtRight{trap}{\exnHandlerAfterTrap}
+\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (trap.east);
+}
+{}
+
+\end{stackDiagram}
+\end{tikzpicture}

@@ -1,0 +1,34 @@
+\begin{frame}<1>[label=takeaway]
+\frametitle{Takeaway}
+\begin{enumerate}
+\item<1-> No allocation to create an exception value for exception without parameter
+\item<2-> No allocation to install an exception handler
+\item<3-> Jumping to the last installed exception handler is done in constant time $O(1)$
+\only<3>{
+\begin{itemize}
+\item No matter how many stack frames between the raising point and the exception handler
+\item Unless... see \#4
+\end{itemize}
+}
+\item<4-> Catching an exception is linear complexity $O(n)$ in terms of number of installed exception \emph{handlers}
+\only<4>{
+\begin{itemize}
+\item Algorithm: trap linked-list traversal
+\begin{itemize}
+\item Discard stack frames up to the last installed handler
+\item Execute the handler's pattern matching
+\item If no match, re-raise the exception
+\end{itemize}
+\item Catching an exception early, in terms of traversed handlers, is cheaper
+\end{itemize}
+}
+\item<5-> Compiling with debug information (\mintinline{sh}{-g}) and activating backtrace collection (\mintinline{sh}{OCAMLRUNPARAM=b} or \mintinline{ocaml}{Printexc.record_backtrace b}) causes complexity of jumping to an handler to be $O(n)$ in terms of number of stack frames
+\only<5>{
+\begin{itemize}
+\item Use \funcname{raise\_notrace} to inhibit the backtrace collection
+\end{itemize}
+\bigskip
+\listocaml[firstline=205,lastline=210]{../ocaml/otherlibs/dynlink/dynlink\_compilerlibs/misc.ml}{otherlibs/dynlink/dynlink\_compilerlibs/misc.ml:205}
+}
+\end{enumerate}
+\end{frame}

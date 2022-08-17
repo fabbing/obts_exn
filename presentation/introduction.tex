@@ -1,0 +1,48 @@
+\begin{frame}{Introduction}{What to expect from this talk?}
+  \begin{itemize}
+    \item This talk is not about \emph{how} to use exceptions in OCaml; it's assumed you already know how to use them.
+    \item It's about understanding \emph{what happens} at the lowest level when an exception is raised and when it's caught.\\
+      How are OCaml exceptions \emph{implemented} in native code?
+    \item OCaml exceptions are said to be particularly fast; how is it achieved?
+    \bigskip
+    \item There will hopefully be valuable takeaways, even if you don't care about the implementation details.
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}{Introduction}{Who and why?}
+  \begin{itemize}
+    \item Fabrice (@fabbing on Github) from the compiler-backend team
+    \item Ran into exceptions on two tasks: frame-pointers and the thread sanitizer support\footnotemark[1] in OCaml 5
+    \bigskip
+    \item I like to understand how things work: hopefully, you too! \begin{tiny}Otherwise, this may be quite boring\dots\end{tiny}
+    \item Grasping the implementation will corroborate information from the takeaway slides
+    \bigskip
+    \item Disclaimer: I'm more confident in my knowledge of the runtime than the compiler
+  \end{itemize}
+  \footnotetext[1]{\url{https://github.com/OlivierNicole/ocaml-tsan}}
+\end{frame}
+
+
+\begin{frame}{Introduction}{Nitty-gritty details}
+  There is good news and bad news about what happens with exceptions\ldots
+  \begin{exampleblock}<4->{Good news}
+    \setlength{\textwidth}{0.6\textwidth}
+    \begin{itemize}
+      \item<4-> Most of it is architecture specific: the implementation depends on the target machine
+      \item<5-> So there will be a lot of x86-64 assembly code!
+    \end{itemize}
+  \end{exampleblock}
+  \begin{alertblock}<2->{Bad news}
+    \begin{itemize}
+      \item<2-> Some of it happens at runtime in\dots the runtime.
+      \item<3-> The runtime uses C code!
+    \end{itemize}
+  \end{alertblock}
+\end{frame}
+
+
+% Outline frame
+\begin{frame}{Outline}{Fasten your seatbelt and brace for impact!}
+  \tableofcontents
+\end{frame}

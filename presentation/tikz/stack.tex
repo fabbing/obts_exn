@@ -1,0 +1,351 @@
+﻿\newif\ifHexadecimal
+\newif\ifShowAddress
+\newif\ifNextArrow
+\pgfkeys{
+/stackDiagram/.is family,
+/stackDiagram,
+default/.style={wordSize=8,xFactor=3.8,yFactor=1,stackOffset=8,colorOpacity=50,showAddress=false},
+wordSize/.estore in=\wordSize,
+xFactor/.estore in=\xFactor,
+yFactor/.estore in=\yFactor,
+stackOffset/.estore in=\stackOffset,
+colorOpacity/.estore in=\colorOpacity,
+showAddress/.is if=ShowAddress,
+%
+/stackFrame/.is family,
+/stackFrame,
+default/.style={color=GreenYellow,opacity=1},
+color/.estore in=\sfColor,
+opacity/.estore in=\sfOpacity,
+%
+/frameLocal/.is family,
+/frameLocal,
+default/.style={hex=false,opacity=1},
+hex/.is if=Hexadecimal,
+opacity/.estore in=\flOpacity,
+%
+/funFrame/.is family,
+/funFrame,
+default/.style={name={},color=GreenYellow,opacity=1,retaddr={}},
+name/.estore in=\ffName,
+color/.estore in=\ffColor,
+opacity/.estore in=\ffOpacity,
+retaddr/.estore in=\ffRetAddr,
+%
+/trapFrame/.is family,
+/trapFrame,
+default/.style={name={},color=RedOrange,opacity=1,handler={},next=0},
+name/.estore in=\tfName,
+color/.estore in=\tfColor,
+opacity/.estore in=\tfOpacity,
+handler/.estore in=\tfHandler,
+next/.estore in=\tfNext,
+nextarrow/.is if=NextArrow,
+%
+/showRegister/.is family,
+/showRegister,
+default/.style={color=Black,opacity=1,offset=0},
+color/.estore in=\srColor,
+opacity/.estore in=\srOpacity,
+offset/.estore in=\srOffset,
+}
+
+\newcommand{\hexToDecInto}[2]{%
+	\StrGobbleLeft{#2}{2}[\stepA]%
+	\StrSubstitute{\stepA}{a}{A}[\stepB]%
+	\StrSubstitute{\stepB}{b}{B}[\stepC]%
+	\StrSubstitute{\stepC}{c}{C}[\stepD]%
+	\StrSubstitute{\stepD}{d}{D}[\stepE]%
+	\StrSubstitute{\stepE}{e}{E}[\stepF]%
+	\StrSubstitute{\stepF}{f}{F}[\out]%
+	\edef#1{\xintHexToDec{\out}}
+}
+
+\newcommand{\isBigNumber}[1]{\pdfmatch{^[0-9]+$}{#1}}
+\newcommand{\isBigNum}[1]{\ifthenelse{\pdfmatch{^[0-9]+$}{#1} = 1}{red}{blue}}
+
+\tikzset{
+addr/.style={right,color=black!50,fill=white,font={\ttfamily\tiny},xshift=1}
+}
+
+
+\newenvironment{stackDiagram}[3][]{%
+% #2 -> StackBegin
+% #3 -> StackEnd
+\pgfkeys{/stackDiagram,default,#1}%
+%
+\newcommand\stackBegin{\xinteval{#2 + \stackOffset}}
+\newcommand\stackEnd{\xinteval{#3 - \stackOffset * 2}}
+}%
+{}
+
+\newcommand{\debugAxis}{{
+\newcommand\x{-1}
+\draw [dashed,gray!50] (\x, 0) -- (\x, -10);
+\foreach \i in {0, -1, ..., -10} {
+	\draw (\x, \i) node [font=\tiny] {$\bullet$};
+	\draw (\x, \i) node [left,font=\tiny] {\i};
+}
+}}
+
+
+\newcommand{\yOffset}[1]{{
+% #1 -> Addr
+\xintfloateval{-(((\stackBegin - (#1)) // \wordSize) * \yFactor)}
+}}
+
+
+\newcommand{\debugAddr}[2][blue]{{
+% #1 -> FontColor (optional)
+% #2 -> Addr
+
+\newcommand\debugAddrX{-1}
+\newcommand\debugAddrY{\yOffset{#2}}
+
+\draw (\debugAddrX, \debugAddrY) node [color=#1] {$\bullet$};
+}}
+
+
+\newcommand{\debugCoord}{{
+\newcommand\debugCoordX{-1}
+\newcommand\debugCoordDiff{\xinteval{\stackBegin - \stackEnd}}
+
+\foreach \i in {0, 8, ..., \debugCoordDiff} {
+	\newcommand\debugCoordAddrIt{\xinteval{\stackBegin - \i}}
+
+	\debugAddr{\debugCoordAddrIt}
+
+	\newcommand\debugCoordAddrY{\yOffset{\debugCoordAddrIt}}
+	\draw (\debugCoordX, \debugCoordAddrY) node [left,font=\small]{\xintDecToHex{\debugCoordAddrIt} is at \debugCoordAddrY};
+}
+}}
+
+% TODO optional pgfkey for left/right
+\newcommand{\coordAtLeft}[2]{{
+% #1 -> Name
+% #2 -> Address
+
+\tikzmath{
+\y = \yOffset{#2};
+\y = \y + 0.5 * \yFactor;
+}
+
+\coordinate (#1) at (0, \y);
+}}
+
+\newcommand{\coordAtRight}[2]{{
+% #1 -> Name
+% #2 -> Address
+
+\tikzmath{
+\y = \yOffset{#2};
+\y = \y + 0.5 * \yFactor;
+}
+
+\coordinate (#1) at (\xFactor, \y);
+}}
+
+\newcommand{\colorWithOpacity}[1]{%
+#1!\colorOpacity%
+}
+
+\newcommand\callStack{{
+\tikzmath{
+\Ax = 0; \Ay = \yOffset{\stackBegin};
+\Bx = 1 * \xFactor; \By = \Ay;
+\Cx = \Bx; \Cy = \yOffset{\stackEnd};
+\Dx = \Ax; \Dy = \Cy;
+}
+
+\coordinate (stackTL) at (\Ax, \Ay);
+\coordinate (stackTR) at (\Bx, \By);
+\coordinate (stackBR) at (\Cx, \Cy);
+\coordinate (stackBL) at (\Dx, \Dy);
+
+\draw [dashed] (stackTL)
+-- (stackTR) node [addr] {\ifShowAddress 0xFFFFFFFFFFFF \fi}
+-- (stackBR) node [addr] {\ifShowAddress 0x0 \fi }
+-- (stackBL)
+-- cycle;
+
+\ifnum \stackOffset > 0
+\tikzmath{
+\Ax = 0; \Ay = \yOffset{\stackBegin};
+\Bx = 1 * \xFactor; \By = \Ay;
+\Cx = \Bx; \Cy = \yOffset{\stackBegin - \stackOffset};
+\Dx = \Ax; \Dy = \Cy;
+}
+
+\fill [pattern=crosshatch,opacity=0.4] (\Ax, \Ay) -- (\Bx, \By) -- (\Cx, \Cy) -- (\Dx,\Dy) -- cycle;
+\fi
+}}
+
+
+\newenvironment{stackFrame}[3][]{
+% #2 -> FrameBegin
+% #3 -> FrameEnd
+\pgfkeys{/stackFrame,default,#1}
+
+\newcommand\sfBegin{#2}
+\newcommand\sfEnd{#3}
+
+\tikzmath{
+\Ax = 0; \Ay = \yOffset{#2};
+\Bx = 1 * \xFactor; \By = \Ay;
+\Cx = \Bx; \Cy = \yOffset{#3};
+\Dx = \Ax; \Dy = \Cy;
+}
+
+\filldraw[fill=\colorWithOpacity{\sfColor},opacity=\sfOpacity,draw=black]
+	(\Ax, \Ay)
+	-- (\Bx, \By) node [addr] {\ifShowAddress 0x\xintDecToHex{#2} \fi}
+	-- (\Cx, \Cy) node [addr] {\ifShowAddress 0x\xintDecToHex{#3} \fi}
+	-- (\Dx, \Dy)
+	--cycle;
+
+\newcommand\total{\xintiieval{#2 - #3 - 1}}
+\foreach \i in {0, 8, ..., \total} {
+\ifnum \i>0
+	\draw [thin,dashed,gray,opacity=0.5] (0, \yOffset{#2 - \i}) -- (\xFactor, \yOffset{#2 - \i});
+\fi
+}
+}{}
+
+
+\newcommand\frameName[1]{{
+\tikzmath{
+\Lx = 1 * \xFactor;
+\Lyt= \yOffset{\sfBegin}; \Lyb = \yOffset{\sfEnd};
+\Ly = (\Lyt + \Lyb) / 2;
+}
+
+% FIXME fill=\colorWithOpacity{\sfColor}
+\draw (\Lx, \Ly) node [above,rotate=90,opacity=\sfOpacity,yshift=1] {#1};
+}}
+
+
+\newcommand\frameLocalAt[3][]{{
+% #2 -> localAddr
+% #3 -> localValue
+\pgfkeys{/frameLocal,default,#1}
+
+\tikzmath{
+\Ax = \xFactor * 0.5;
+\Ay = \yOffset{#2}; \Ay = \Ay + 0.5 * \yFactor;
+}
+
+\ifHexadecimal
+\draw (\Ax, \Ay) node [opacity=\flOpacity] {0x\xintDecToHex{#3}};
+\else
+\draw (\Ax, \Ay) node [opacity=\flOpacity] {#3};
+\fi
+}}
+
+
+\newcommand\frameLocal[3][]{{
+% #2 -> localOffset
+% #3 -> localValue
+\pgfkeys{/frameLocal,default,#1}
+
+\newcommand\sfLocalAddr{%
+\xintfloateval{\sfBegin - ((#2 + 1) * \wordSize)}%
+}
+\frameLocalAt[#1,opacity=\sfOpacity]{\sfLocalAddr}{#3}
+}}
+
+
+\newcommand\frameReturnAddr[2][]{{
+% #2 -> frameReturnAddr
+\pgfkeys{/frameLocal,default,#1}
+
+\frameLocal[#1]{0}{#2}
+}}
+
+
+\newcommand{\pointerTo}[2]{{
+% #1 -> ptrAddr
+% #2 -> ptrValue
+
+\frameLocalAt[hex=true]{#1}{#2}
+
+\tikzmath{
+\Ax = 0;
+\Ay = \yOffset{#1}; \Ay = \Ay + 0.5 * \yFactor;
+\Bx = 0;
+\By = \yOffset{#2}; \By = \By + 0.5 * \yFactor;
+\Cx = -0.5; \Cy = (\Ay + \By) / 2;
+}
+ 
+\draw [darkgray] (0.5, \Ay) -- (\Ax, \Ay);
+\draw [darkgray,rounded corners] (\Ax, \Ay) -| (\Cx, \Cy);
+\draw [darkgray,->,rounded corners] (\Cx, \Cy) |- (\Bx, \By);
+}}
+
+
+\newenvironment{funFrame}[3][]{
+% #2 -> ffBegin
+% #3 -> ffEnd
+\pgfkeys{/funFrame,default,#1}
+
+\begin{stackFrame}[color=\ffColor,opacity=\ffOpacity]{#2}{#3}
+\IfStrEq{\ffName}{}
+{}
+{\funName{\ffName}}
+\IfStrEq{\ffRetAddr}{}
+{}
+{\funReturnAddr{\ffRetAddr}}
+}
+{\end{stackFrame}}
+
+
+\newcommand\funName[1]{{
+\frameName{#1}
+}}
+
+
+\newcommand\funReturnAddr[2][]{{
+% #2 -> funReturnAddr
+\pgfkeys{/frameLocal,default,#1}
+
+\frameReturnAddr[#1]{#2}
+}}
+
+\newcommand\showRegister[3][] {
+% #2 -> regName
+% #3 -> regAddr
+\pgfkeys{/showRegister,default,#1}%
+
+\tikzmath{
+\Ax = -0.3 + \srOffset;
+\Ay = \yOffset{#3}; \Ay = \Ay + 0.5 * \yFactor;
+\Bx = 0;
+\By = \yOffset{#3}; \By = \By + 0.5 * \yFactor;
+}
+
+\draw [->,>=stealth,color=\srColor] (\Ax, \Ay)
+	node [draw,fill=white,rounded corners,left] {#2}
+	-- (\Bx, \By);
+}
+
+
+\newcommand{\trapFrame}[2][]{{
+% #2 -> trapAddr
+\pgfkeys{/trapFrame,default,#1}
+
+\begin{stackFrame}[color=\tfColor,opacity=\tfOpacity]{#2}{\xinteval{#2 - 2 * \wordSize}}
+\frameName{\tfName}
+\frameLocal{0}{\tfHandler}
+
+\ifNextArrow
+\pointerTo{\xinteval{#2 - \wordSize}}{\xinteval{\tfNext - \wordSize}}
+\else
+\IfStrEq{\tfNext}{}
+{}
+
+% FIXME pfgkeys should expand hex with commands
+{\ifthenelse{\isBigNumber{\tfNext} = 1}
+{\frameLocal[hex=true]{1}{\tfNext}}
+{\frameLocal[hex=false]{1}{\tfNext}}}
+\fi
+\end{stackFrame}
+}}

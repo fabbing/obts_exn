@@ -1,0 +1,111 @@
+%
+% x86-64 assembly
+%
+\subsection{x86-64 asssembly}
+\frameSubsection{pictures/Nebuchadnezzar.png}{}
+
+\newcommand\assemblyExample{%
+}
+\begin{frame}{x86-64 assembly}{Syntax and registers}
+\begin{columns}[c]
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item x86-64 CPU have 64-bit registers and 64-bit word size
+\item Assembly is shown with the AT\&T syntax
+\begin{itemize}
+\item Parameter order is: source first then destination
+\item \inputminted{gas}{src/assembly/movq.S}
+\item \text{``}q\text{''} suffix for QWORD operand (quad word) with $4 x 16\text{bit word} = 64\text{bit}$
+\end{itemize}
+\item I'll use \emph{word} for \emph{machine word} (64-bit)
+\end{itemize}
+\end{column}
+\begin{column}{0.5\textwidth}
+\begin{table}
+\begin{tabular}{|c|c|}
+\hline
+Monikers & Description \\
+\hline
+\hline
+RAX & \\
+\hline
+RBX & \\
+\hline
+RCX & \\
+\hline
+RDX & \\
+\hline
+RSI & \\
+\hline
+RDI & \\
+\hline
+RSP & Stack Pointer \\
+\hline
+RBP & \\
+\hline
+R8  & \\
+\hline
+R9  & \\
+\hline
+R10 & \\
+\hline
+R11 & \\
+\hline
+R12 & \\
+\hline
+R13 & \\
+\hline
+R14 & caml_domain_state* \\
+\hline
+R15 & young_ptr* \\
+\hline
+RIP & Instruction Pointer \\
+\hline
+\end{tabular}
+\caption{General Purpose and Pointers Registers}
+\end{table}
+\end{column}
+\end{columns}
+\end{frame}
+% https://en.wikipedia.org/wiki/X86_assembly_language#Syntax
+% https://wiki.osdev.org/CPU_Registers_x86-64
+
+\newcommand\listassembly[1][]{
+\mintobjdump[firstline=4,lastline=10,#1]{../src/assembly/do\_asm.objdump}}
+\begin{frame}{Instructions}
+\begin{columns}[c]
+\begin{column}{0.5\textwidth}
+\onslide*<2->{
+\begin{itemize}
+\only<2>{\item\funcname{sub}: Substracts the source operand from the destination operand and stores the result in the destination operand}
+\only<3-4>{\item \funcname{mov}: Copies the source operand to the destination operand}
+\only<5>{\item \funcname{push}: Decrements the stack pointer and then stores the source operand on the top of the stack}
+\only<6>{\item \funcname{pop}: Loads the value from the top of the stack to the location of the destination operand and then increments the stack pointer}
+\only<7>{\item \funcname{call}: Saves RIP on the stack and branches to the procedure specified with the target operand}
+\only<8>{\item \funcname{add}: Adds the source operand and the destination operand and stores the result in the destination operand}
+\end{itemize}
+\bigskip
+}
+\only<1>{\listc[firstline=8,lastline=19]{../src/assembly/assembly.c}{assembly/assembly.c}}%
+\only<2>{\listassembly[highlightlines=4]{}}%
+\only<3>{\listassembly[highlightlines=5]{}}%
+\only<4>{\listassembly[highlightlines=6]{}}%
+\only<5>{\listassembly[highlightlines=7]{}}%
+\only<6>{\listassembly[highlightlines=8]{}}%
+\only<7>{\listassembly[highlightlines=9]{}}%
+\only<8>{\listassembly[highlightlines=10]{}}%
+\end{column}
+\begin{column}{0.5\textwidth}
+\centering
+\only<1>{\providecommand\step{1}\input{diagrams/assembly/assembly.tex}}%
+\only<2>{\providecommand\step{2}\input{diagrams/assembly/assembly.tex}}%
+\only<3>{\providecommand\step{3}\input{diagrams/assembly/assembly.tex}}%
+\only<4>{\providecommand\step{4}\input{diagrams/assembly/assembly.tex}}%
+\only<5>{\providecommand\step{5}\input{diagrams/assembly/assembly.tex}}%
+\only<6>{\providecommand\step{6}\input{diagrams/assembly/assembly.tex}}%
+\only<7>{\providecommand\step{7}\input{diagrams/assembly/assembly.tex}}%
+\only<8>{\providecommand\step{8}\input{diagrams/assembly/assembly.tex}}%
+\end{column}
+\end{columns}
+\end{frame}
+% https://www.felixcloutier.com/x86/

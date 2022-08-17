@@ -1,0 +1,50 @@
+\begin{tikzpicture}[font=\sffamily\tiny]
+\input{../src/default/gdb.out}
+
+\newcommand\trapEnd{\xinteval{\trapBegin - 2 * \wordSize}}
+\newcommand\trapHandlerAddr{\xinteval{\trapBegin - 1 * \wordSize}}
+
+
+\begin{stackDiagram}[yFactor=0.4,showAddress=true]{\camlStackBegin}{\frameMainEnd}
+\callStack
+
+\ifthenelse{\step>1}{
+\begin{stackFrame}[color=Cyan]{\camlStackBegin}{\camlStackSpDwarfAt}
+\frameLocalAt{\camlStackGcRegsAt}{gc\_regs}
+\frameLocalAt{\camlStackSpDwarfAt}{rsp for dwarf}
+\end{stackFrame}
+}{}
+
+\ifthenelse{\step>2}{
+\begin{funFrame}[name=trap,color=Red]{\camlStackSpDwarfAt}{\camlStackTrapNextAt}
+\frameLocalAt{\camlStackTrapHandlerAt}{\camlStackTrapHandler}
+\frameLocalAt[hex=true]{\camlStackTrapNextAt}{\camlStackTrapNext}
+\end{funFrame}
+}{}
+
+\ifthenelse{\step>3}{
+\begin{funFrame}[name=program,color=Yellow]{\camlProgramBegin}{\camlProgramEnd}
+\funReturnAddr{\camlProgramRetaddr}
+\end{funFrame}
+}{}
+
+\ifthenelse{\step=0 \or \step>3}{
+\begin{funFrame}[name=entry,retaddr=\frameEntryRetaddr,color=GreenYellow]{\frameEntryBegin}{\frameEntryEnd}
+\end{funFrame}
+
+\begin{funFrame}[name=main,color=YellowGreen]{\frameMainBegin}{\frameMainEnd}
+\funReturnAddr{\frameMainRetaddr}
+\frameLocal{1}{\frameMainLocalOne}
+\end{funFrame}
+}{}
+
+\coordinate (bottom) at ($(stackBL) + (0,-0.5)$);
+
+\ifthenelse{\step=0 \or \step>2}{
+\domainState[pos=(bottom)]{\exnHandlerBeforeRaise}
+\coordAtRight{trap}{\exnHandlerBeforeRaise}
+\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (trap.east);
+}{}
+
+\end{stackDiagram}
+\end{tikzpicture}

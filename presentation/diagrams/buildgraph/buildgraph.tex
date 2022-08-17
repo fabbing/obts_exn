@@ -1,0 +1,92 @@
+\newcommand\buildgraph[1]{%
+\begin{tikzpicture}[
+node distance=0.7cm,
+scale=#1, every node/.append style={transform shape},
+%
+base/.style={draw,inner sep=3,minimum height=20,minimum width=60},
+%
+rectangular/.style={base,rectangle},
+elliptical/.style={base,ellipse},
+myfile/.style={rectangular,color=black,fill=blue!20},
+genfile/.style={rectangular,color=black,fill=green!20},
+program/.style={elliptical,color=black,fill=red!20},
+script/.style={elliptical,color=black,fill=blue!20},
+%
+output/.style={->,>=stealth,semithick},
+input/.style={<-,>=stealth,semithick},
+include/.style={input,dashed},
+]	
+
+\node[myfile] (makefile) { Makefile };
+\node[myfile] (example-ml) [right=of makefile] { example.ml };
+\node[myfile] (commands-gdb) [right=of example-ml] { commands.gdb };
+
+\node[program] (ocamlopt) [below=of example-ml] { ocamlopt };
+\node[genfile] (example-exe) [right=of ocamlopt] { example.exe };
+\node[genfile] (example-linear) [below=of ocamlopt] { example.linear };
+\node[genfile] (example-cmm) [left=of example-linear] { example.cmm };
+
+\node[script] (cmm-awk) [below=of example-cmm] { awk };
+\node[script] (linear-awk) [below=of example-linear] { awk };
+\node[program] (objdump) [right=of linear-awk] { objdump };
+
+\node[program] (rr-record) [right=of example-exe] { rr record };
+\node[program] (rr-replay) [below=of rr-record] { rr replay };
+
+\node[script] (latex-sh) [below=of rr-replay] { latex.sh };
+\node[genfile] (gdb-out) [below=of latex-sh] { gdb.out };
+
+\node[genfile] (func2-cmm) [below=of cmm-awk,xshift=8,yshift=-16] { func2.cmm };
+\node[genfile] (func1-cmm) [below=of cmm-awk] { func1.cmm };
+
+\node[genfile] (func2-linear) [below=of linear-awk,xshift=8,yshift=-16] { func2.linear };
+\node[genfile] (func1-linear) [below=of linear-awk] { func1.linear };
+
+\node[genfile] (func2-objdump) [below=of objdump,xshift=8,yshift=-16] { func2.objdump };
+\node[genfile] (func1-objdump) [below=of objdump] { func1.objdump };
+
+\node[myfile] (section-tex) [below=of func1-linear,yshift=-30] { section.tex };
+\node[myfile] (stack-tex) [below=of gdb-out,yshift=-30] { stack.tex };
+\node[myfile] (diagram-tex) [left=of stack-tex] { diagram.tex };
+
+\node[program] (pdflatex) [below=of section-tex,align=center] { pdflatex };
+\node[genfile] (slides-pdf) [right=of pdflatex ] { slides.pdf };
+
+%\draw [include] (ocamlopt) to [bend left] (makefile);
+\draw [input] (ocamlopt) -- (example-ml);
+\draw [output] (ocamlopt) -- (example-exe);
+\draw [output] (ocamlopt) to [out=-90,in=90,looseness=0.6] (example-cmm);
+\draw [output] (ocamlopt) -- (example-linear);
+
+%\draw [include] (rr-record) to [out=140,in=-55,looseness=0.4] (makefile);
+\draw [input] (rr-record) -- (example-exe);
+\coordinate[shift={(1.5,0)}] (rr-rec-right) at (rr-record);
+\draw [include] (rr-replay) [in=-90,out=60] to (rr-rec-right);
+\draw (rr-rec-right) [semithick,dashed,in=0,out=90] to (commands-gdb);
+\draw [input] (rr-replay) -- (rr-record);
+
+\draw [input] (cmm-awk) -- (example-cmm);
+\draw [output] (cmm-awk) -- (func1-cmm);
+
+\draw [input] (linear-awk) -- (example-linear);
+\draw [output] (linear-awk) -- (func1-linear);
+
+\draw [input] (objdump) -- (example-exe);
+\draw [output] (objdump) -- (func1-objdump);
+
+\draw [include] (latex-sh) -- (rr-replay);
+\draw [output] (latex-sh) -- (gdb-out);
+
+\draw [include] (diagram-tex) to [out=90,in=-90] (gdb-out);
+\draw [input] (diagram-tex) -- (stack-tex);
+
+\draw [include] (section-tex) to [out=110,in=-90] (func2-cmm);
+\draw [include] (section-tex) to [out=90,in=-90]  (func2-linear);
+\draw [include] (section-tex) to [out=70,in=-90] (func2-objdump);
+\draw [input] (section-tex) -- (diagram-tex);
+
+\draw [input] (pdflatex) -- (section-tex);
+\draw [output] (pdflatex) -- (slides-pdf);
+
+\end{tikzpicture}%
+}

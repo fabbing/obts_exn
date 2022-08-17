@@ -1,0 +1,6 @@
+Dtor of World #0
+Dtor of Hello #0
+Dtor of World #1
+Dtor of Hello #1
+Dtor of World #2
+Dtor of Hello #2

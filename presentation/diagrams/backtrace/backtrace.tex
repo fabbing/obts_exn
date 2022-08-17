@@ -1,0 +1,145 @@
+\begin{tikzpicture}[font=\sffamily\tiny]
+\input{../src/backtrace/gdb.out}
+
+\newcommand\trapExnAEnd{\xinteval{\trapExnABegin - 2 * \wordSize}}
+\newcommand\trapExnBEnd{\xinteval{\trapExnBBegin - 2 * \wordSize}}
+\newcommand\trapExnCEnd{\xinteval{\trapExnCBegin - 2 * \wordSize}}
+
+\begin{stackDiagram}[yFactor=0.35,showAddress=true]{\frameMainBegin}{\frameDefinitelyEnd}
+\callStack
+
+\begin{funFrame}[name=main,color=GreenYellow]{\frameMainBegin}{\frameMainEnd}
+\funReturnAddr{\frameMainRetaddr}
+\frameLocal{1}{\frameMainLocalOne}
+\end{funFrame}
+
+
+\ifthenelse{\step<13}{
+\trapFrame[name=ExnC,handler=\trapExnCHandler,next=\trapExnCNext,color=WildStrawberry]{\trapExnCBegin}
+\coordAtRight{exnCtrap}{\exnHandlerAfterExnCTrap}
+}{}
+
+
+\ifthenelse{\step<10}{
+\trapFrame[name=ExnB,handler=\trapExnBHandler,next=\trapExnBNext,color=OrangeRed]{\trapExnBBegin}
+\coordAtRight{exnBtrap}{\exnHandlerAfterExnBTrap}
+\draw [->,>=latex] (exnBtrap.east) to [out=0,in=0] (exnCtrap.east);
+
+\begin{funFrame}[name=maybe,color=YellowGreen]{\frameMaybeBegin}{\frameMaybeEnd}
+\funReturnAddr{\frameMaybeRetaddr}
+\frameLocal{1}{\frameMaybeLocalOne}
+\end{funFrame}
+
+\begin{funFrame}[name=probably,color=Green]{\frameProbablyBegin}{\frameProbablyEnd}
+\funReturnAddr{\frameProbablyRetaddr}
+\frameLocal{1}{\frameProbablyLocalOne}
+\end{funFrame}
+}{}
+
+
+\ifthenelse{\step<5}{
+\trapFrame[name=ExnA,handler=\trapExnAHandler,next=\trapExnANext,color=Red]{\trapExnABegin}
+\coordAtRight{exnAtrap}{\exnHandlerAfterExnATrap}
+\draw [->,>=latex] (exnAtrap.east) to [out=0,in=0] (exnBtrap.east);
+
+\begin{funFrame}[name=definitely,color=JungleGreen]{\frameDefinitelyBegin}{\frameDefinitelyEnd}
+\funReturnAddr{\frameDefinitelyRetaddr}
+\frameLocal{1}{\frameDefinitelyLocalOne}
+\end{funFrame}
+
+\begin{funFrame}[name=raise,color=SeaGreen]{\frameCamlRaiseExnBegin}{\frameCamlRaiseExnEnd}
+\funReturnAddr{\frameCamlRaiseExnRetaddr}
+\end{funFrame}
+}{}
+
+
+\ifthenelse{\step>5 \and \step<10}{
+\begin{funFrame}[name=reraise,color=JungleGreen]{\frameCamlReraiseExnBeginvB}{\frameCamlReraiseExnEndvB}
+\funReturnAddr{\frameCamlReraiseExnRetaddrvB}
+\end{funFrame}
+}{}
+
+\ifthenelse{\step>10 \and \step<13}{
+\begin{funFrame}[name=reraise,color=JungleGreen]{\frameCamlReraiseExnBeginvC}{\frameCamlReraiseExnEndvC}
+\funReturnAddr{\frameCamlReraiseExnRetaddrvC}
+\end{funFrame}
+}{}
+
+
+\coordinate (bottom) at ($(stackBL) + (0,-0.5)$);
+
+
+\ifthenelse{\step=1}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{}{0}
+\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnAtrap.east);
+}{}
+
+\ifthenelse{\step>4 \and \step<7}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvA}{\nextFrameDescrPCvB}{\stashBacktraceBacktracePosvA}
+}{}
+
+\ifthenelse{\step>9 \and \step<12}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvB}{\nextFrameDescrPCvE}{\stashBacktraceBacktracePosvB}
+}{}
+
+\ifthenelse{\step=5}{
+\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnBtrap.east);
+}{}
+
+\ifthenelse{\step=10}{
+\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnCtrap.east);
+}{}
+
+\ifthenelse{\step>1 \and \step<5}{
+\showRegister{sp}{\stashBacktraceArgSPvA}
+\showRegister{trapsp}{\stashBacktraceArgTrapSPvA}
+}{}
+
+\ifthenelse{\step=2}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{}{0}
+}{}
+
+\ifthenelse{\step=3}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{\nextFrameDescrPCvA}{1}
+\showRegister[color=OrangeRed,offset=-0.5]{sp}{\nextFrameDescrSPvA}
+}{}
+
+\ifthenelse{\step=4}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{\nextFrameDescrPCvB}{2}
+\showRegister[color=OrangeRed,offset=-0.8]{sp}{\nextFrameDescrSPvB}
+}{}
+
+
+\ifthenelse{\step>6 \and \step<10}{
+\showRegister{sp}{\stashBacktraceArgSPvB}
+\showRegister{trapsp}{\stashBacktraceArgTrapSPvB}
+}{}
+
+\ifthenelse{\step=7}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvA}{\nextFrameDescrPCvC}{3}
+\showRegister[color=OrangeRed,offset=-0.5]{sp}{\nextFrameDescrSPvC}
+}{}
+
+\ifthenelse{\step=8}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvA}{\nextFrameDescrPCvD}{4}
+\showRegister[color=OrangeRed]{sp}{\nextFrameDescrSPvD}
+}{}
+
+\ifthenelse{\step=9}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvA}{\nextFrameDescrPCvE}{5}
+\showRegister[color=OrangeRed,offset=-0.8]{sp}{\nextFrameDescrSPvE}
+}{}
+
+
+\ifthenelse{\step>10 \and \step<13}{
+\showRegister[offset=-0.5]{trapsp}{\stashBacktraceArgTrapSPvC}
+\showRegister{sp}{\stashBacktraceArgSPvC}
+}{}
+
+\ifthenelse{\step=12}{
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvB}{\nextFrameDescrPCvF}{\stashBacktraceBacktracePosvC}
+}{}
+
+
+\end{stackDiagram}
+\end{tikzpicture}
