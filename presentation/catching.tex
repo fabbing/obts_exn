@@ -11,7 +11,7 @@
 \begin{itemize}
 \item Exceptions are ordinary values\footnotemark
 \item No longer special: an extensible variant type (\text{``}not fully defined in one place\text{''})
-\item \mintinline{ocaml}{exception Exc} is equivalent to \mintinline{ocaml}{type exn += Exc of int}
+\item \mintinline{ocaml}{exception Exc of int} is equivalent to \mintinline{ocaml}{type exn += Exc of int}
 \item Like variants, if the exception has no parameter, memory allocation isn't needed
 \item Exceptions with parameter (\mintinline{ocaml}{exception <name> of <type>}) need heap allocation
 \end{itemize}
