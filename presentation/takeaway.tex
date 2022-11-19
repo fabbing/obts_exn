@@ -7,7 +7,7 @@
 \only<3>{
 \begin{itemize}
 \item No matter how many stack frames between the raising point and the exception handler
-\item Unless... see \#4
+\item Unless... see \hyperlink{bt-collection}{\beamergotobutton{\#5}}
 \end{itemize}
 }
 \item<4-> Catching an exception is linear complexity $O(n)$ in terms of number of installed exception \emph{handlers}
@@ -22,7 +22,7 @@
 \item Catching an exception early, in terms of traversed handlers, is cheaper
 \end{itemize}
 }
-\item<5-> Compiling with debug information (\mintinline{sh}{-g}) and activating backtrace collection (\mintinline{sh}{OCAMLRUNPARAM=b} or \mintinline{ocaml}{Printexc.record_backtrace b}) causes complexity of jumping to an handler to be $O(n)$ in terms of number of stack frames
+\item<5-> \hypertarget<5->{bt-collection}{} Compiling with debug information (\mintinline{sh}{-g}) and activating backtrace collection (\mintinline{sh}{OCAMLRUNPARAM=b} or \mintinline{ocaml}{Printexc.record_backtrace b}) causes complexity of jumping to an handler to be $O(n)$ in terms of number of stack frames
 \only<5>{
 \begin{itemize}
 \item Use \funcname{raise\_notrace} to inhibit the backtrace collection
