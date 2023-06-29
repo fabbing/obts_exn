@@ -1,5 +1,5 @@
 \documentclass[aspectratio=169,usenames,dvipsnames,8pt,compress]{beamer}
-%\setbeameroption{show notes on second screen}
+\setbeamertemplate{navigation symbols}{}
 \setbeamersize{
 text margin left=5pt,
 text margin right=5pt
@@ -202,22 +202,13 @@ text margin right=5pt
 \section{Nested handlers}
 \input{nested.tex}
 
-\section{Bonus: Default handler}
+\section{Backtraces}
+\input{backtrace.tex}
+
+\section{Bonus: The default handler}
 \input{default.tex}
 
 \section*{Outro}
 \input{outro.tex}
-
-
-% TODO
-%\section{Backtraces}
-%\input{backtrace.tex}
-
-% Rewrite exn trap on realloc
-% Exceptions from C
-% Exceptions and effects
-% Exceptions in bytecode
-% Exceptions and TSan
-% RBP bug with exn
 
 \end{document}

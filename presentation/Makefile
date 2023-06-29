@@ -3,7 +3,9 @@ presentation:=${tex_source:.tex=.pdf}
 
 ocaml_dir:=../ocaml
 sources_dir:=src
-sources:=${sources_dir}/ocaml/domain_state.h ${sources_dir}/ocaml/domain_state_abbr.h
+sources:=${sources_dir}/ocaml/domain_state.h \
+				 ${sources_dir}/ocaml/domain_state_abbr.h \
+				 ${sources_dir}/ocaml/domain_state_backtrace.h
 
 
 .PHONY: all
@@ -39,3 +41,5 @@ ${sources_dir}/ocaml/domain_state.h:
 ${sources_dir}/ocaml/domain_state_abbr.h: ${sources_dir}/ocaml/domain_state.h
 	sed -nf ${sources_dir}/domain_state_abbr.sed >$@ <$<
 
+${sources_dir}/ocaml/domain_state_backtrace.h: ${sources_dir}/ocaml/domain_state.h
+	sed -nf ${sources_dir}/domain_state_backtrace.sed >$@ <$<

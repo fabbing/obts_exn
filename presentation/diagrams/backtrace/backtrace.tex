@@ -13,7 +13,6 @@
 \frameLocal{1}{\frameMainLocalOne}
 \end{funFrame}
 
-
 \ifthenelse{\step<13}{
 \trapFrame[name=ExnC,handler=\trapExnCHandler,next=\trapExnCNext,color=WildStrawberry]{\trapExnCBegin}
 \coordAtRight{exnCtrap}{\exnHandlerAfterExnCTrap}
@@ -47,7 +46,7 @@
 \frameLocal{1}{\frameDefinitelyLocalOne}
 \end{funFrame}
 
-\begin{funFrame}[name=raise,color=SeaGreen]{\frameCamlRaiseExnBegin}{\frameCamlRaiseExnEnd}
+\begin{funFrame}[color=SeaGreen]{\frameCamlRaiseExnBegin}{\frameCamlRaiseExnEnd}
 \funReturnAddr{\frameCamlRaiseExnRetaddr}
 \end{funFrame}
 }{}
@@ -66,10 +65,10 @@
 }{}
 
 
-\coordinate (bottom) at ($(stackBL) + (0,-0.5)$);
+\coordinate (bottom) at ($(stackBL) + (0,-0.25)$);
 
 
-\ifthenelse{\step=1}{
+\ifthenelse{\step=1 \or \step=2}{
 \domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{}{0}
 \draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnAtrap.east);
 }{}
@@ -90,54 +89,68 @@
 \draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnCtrap.east);
 }{}
 
-\ifthenelse{\step>1 \and \step<5}{
-\showRegister{sp}{\stashBacktraceArgSPvA}
-\showRegister{trapsp}{\stashBacktraceArgTrapSPvA}
-}{}
-
 \ifthenelse{\step=2}{
-\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{}{0}
+\showRegister{sp}{\stashBacktraceArgSPvA}
 }{}
 
 \ifthenelse{\step=3}{
 \domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{\nextFrameDescrPCvA}{1}
-\showRegister[color=OrangeRed,offset=-0.5]{sp}{\nextFrameDescrSPvA}
+\showRegister{sp}{\nextFrameDescrSPvA}
 }{}
 
 \ifthenelse{\step=4}{
 \domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{\nextFrameDescrPCvB}{2}
-\showRegister[color=OrangeRed,offset=-0.8]{sp}{\nextFrameDescrSPvB}
+\showRegister[opacity=0.25]{sp}{\nextFrameDescrSPvA}
+\showRegister[offset=-0.8]{sp}{\nextFrameDescrSPvB}
 }{}
 
+% Drawing order matter for z-index trapsp/sp
+\ifthenelse{\step>1 \and \step<5}{
+\showRegister{trapsp}{\stashBacktraceArgTrapSPvA}
+\showRegister{pc}{\frameCamlRaiseExnEnd}
+}{}
 
-\ifthenelse{\step>6 \and \step<10}{
-\showRegister{sp}{\stashBacktraceArgSPvB}
-\showRegister{trapsp}{\stashBacktraceArgTrapSPvB}
+\ifthenelse{\step>5 \and \step<10}{
+\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnBtrap.east);
 }{}
 
 \ifthenelse{\step=7}{
 \domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvA}{\nextFrameDescrPCvC}{3}
-\showRegister[color=OrangeRed,offset=-0.5]{sp}{\nextFrameDescrSPvC}
+\showRegister[opacity=0.25]{sp}{\stashBacktraceArgSPvB}
+\showRegister{sp}{\nextFrameDescrSPvC}
 }{}
 
 \ifthenelse{\step=8}{
 \domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvA}{\nextFrameDescrPCvD}{4}
-\showRegister[color=OrangeRed]{sp}{\nextFrameDescrSPvD}
+\showRegister[opacity=0.25]{sp}{\nextFrameDescrSPvC}
+\showRegister{sp}{\nextFrameDescrSPvD}
 }{}
 
 \ifthenelse{\step=9}{
 \domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvA}{\nextFrameDescrPCvE}{5}
-\showRegister[color=OrangeRed,offset=-0.8]{sp}{\nextFrameDescrSPvE}
+\showRegister[opacity=0.25]{sp}{\nextFrameDescrSPvD}
+\showRegister[offset=-0.8]{sp}{\nextFrameDescrSPvE}
+}{}
+
+% Drawing order matter for z-index trapsp/sp
+\ifthenelse{\step>6 \and \step<10}{
+\showRegister{pc}{\frameCamlReraiseExnEndvB}
+\showRegister{trapsp}{\stashBacktraceArgTrapSPvB}
 }{}
 
 
 \ifthenelse{\step>10 \and \step<13}{
-\showRegister[offset=-0.5]{trapsp}{\stashBacktraceArgTrapSPvC}
-\showRegister{sp}{\stashBacktraceArgSPvC}
+\draw [->,>=latex] (exnHandlerRight.east) to [out=0,in=0] (exnCtrap.east);
 }{}
 
 \ifthenelse{\step=12}{
 \domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnPopTrapvB}{\nextFrameDescrPCvF}{\stashBacktraceBacktracePosvC}
+}{}
+
+% Drawing order matter for z-index trapsp/sp
+\ifthenelse{\step>10 \and \step<13}{
+\showRegister{pc}{\frameCamlReraiseExnEndvC}
+\showRegister{trapsp}{\stashBacktraceArgTrapSPvC}
 }{}
 
 

@@ -322,7 +322,7 @@ addr/.style={right,color=black!50,fill=white,font={\ttfamily\tiny},xshift=1}
 \By = \yOffset{#3}; \By = \By + 0.5 * \yFactor;
 }
 
-\draw [->,>=stealth,color=\srColor] (\Ax, \Ay)
+\draw [->,>=stealth,color=\srColor,opacity=\srOpacity] (\Ax, \Ay)
 	node [draw,fill=white,rounded corners,left] {#2}
 	-- (\Bx, \By);
 }
