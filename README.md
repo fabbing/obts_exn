@@ -1,11 +1,11 @@
 # OCaml behind the scenes: exceptions
 
-Sources of the slides and examples of the tech talk given at Tarides, Paris, on 2022/11/18.
+Sources of the slides and examples from the 'tech talk' that was held on 2022-11-18, at Tarides in Paris. The recording is now available on [watch.ocaml.org](https://watch.ocaml.org/w/vur2uhCFTZWQfDfkcbCPfC).
+This version of the slides also includes the 'Backtraces' section and 'The default handler' as a bonus one, which were not covered in the original talk due to time constraints.
 
-Rendered slides are available in the [releases](https://github.com/fabbing/obts_exn/releases/).
+Rendered slides can be found in the [releases](https://github.com/fabbing/obts_exn/releases/).
 
-This talk is about understanding how OCaml exceptions are implemented in native code.
-What happens at the lowest level when an exception is raised and when it’s caught? OCaml exceptions are said to be particularly fast; how is it achieved?
+The goal of this presentation is to explain the implementation of OCaml exceptions in native code. What happens at the lowest level when an exception is raised and subsequently caught? It is often claimed that OCaml exceptions are particularly fast, how is this achieved?
 
 # Outline
 
@@ -20,6 +20,9 @@ What happens at the lowest level when an exception is raised and when it’s cau
 * Nested handlers
   * Multiple handlers, multiple traps
   * Raise and reraise
+* Backtraces
+  * One advantage of raising with debugging information
+  * The multiple kinds of raise
 * Bonus: Default handler
   * Runtime's default exception handler
 
