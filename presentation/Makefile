@@ -11,6 +11,7 @@ sources:=${sources_dir}/ocaml/domain_state.h \
 .PHONY: all
 all: ${presentation}
 
+# TODO use latexmk
 ${presentation}: ${tex_source} ${sources}
 	xelatex --shell-escape ${tex_source}
 
