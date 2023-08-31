@@ -12,7 +12,7 @@ sources:=${sources_dir}/ocaml/domain_state.h \
 all: ${presentation}
 
 ${presentation}: ${tex_source} ${sources}
-	pdflatex --shell-escape ${tex_source}
+	xelatex --shell-escape ${tex_source}
 
 .PHONY: clean
 clean:
