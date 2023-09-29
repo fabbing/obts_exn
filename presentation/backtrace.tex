@@ -134,12 +134,12 @@
         \mintc[firstline=190,lastline=192,highlightlines={191-192}]{../ocaml/runtime/amd64.S}
         \mintc[firstline=234,lastline=237,highlightlines={235-237}]{../ocaml/runtime/amd64.S}
       }
-      \onslide*<1>{\listCamlRaiseExn[highlightlines=705]{}}
-      \onslide*<2>{\listCamlRaiseExn[highlightlines={707-708}]{}}
-      \onslide*<3>{\listCamlRaiseExn[highlightlines={712-714}]{}}
-      \onslide*<4>{\listCamlRaiseExn[highlightlines={715-720}]{}}
-      \onslide*<5>{\providecommand\step{1}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<6>{\providecommand\step{2}\input{diagrams/backtrace/backtrace.tex}}
+      \onslide*<1>{\listCamlRaiseExn[highlightlines=705]{}}%
+      \onslide*<2>{\listCamlRaiseExn[highlightlines={707-708}]{}}%
+      \onslide*<3>{\listCamlRaiseExn[highlightlines={712-714}]{}}%
+      \onslide*<4>{\listCamlRaiseExn[highlightlines={715-720}]{}}%
+      \onslide*<5>{\providecommand\step{1}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<6>{\providecommand\step{2}\input{diagrams/backtrace/backtrace.tex}}%
     \end{column}
   \end{columns}
 \end{frame}
@@ -212,6 +212,32 @@
   \end{columns}
 \end{frame}
 
+\begin{frame}{Backtraces}{Scanning the stack with \typename{frame\_descr}}
+  \begin{columns}[c]
+    \begin{column}{0.5\textwidth}
+      \begin{itemize}
+        \item Given the return address of the code that raises the exception by calling \funcname{caml\_raise\_exn} (\funcarg{pc} argument of \funcname{caml\_stash\_backtrace})
+        \item And the position of the stack pointer (\funcarg{sp} argument of \funcname{caml\_stash\_backtrace})
+        \item The frame size given by \typename{frame\_descr}.\funcarg{frame\_size}, allows to find the end of the previous frame
+        \item And the return address of the caller of this function
+        \bigskip
+        \onslide<3->{
+        \item Note that traps (here the reddish \funcname{ExnA}, \funcname{ExnB} and \funcname{ExnC} blocks) belong to the frame that installed them, and so the frame size changes when traps are removed
+        }
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \raggedleft
+      \onslide*<1>{\providecommand\step{2}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<2>{\providecommand\step{1}\input{diagrams/backtrace/scanstack.tex}}%
+      \onslide*<3>{\providecommand\step{2}\input{diagrams/backtrace/scanstack.tex}}%
+      \onslide*<4>{\providecommand\step{3}\input{diagrams/backtrace/scanstack.tex}}%
+      \onslide*<5>{\providecommand\step{4}\input{diagrams/backtrace/scanstack.tex}}%
+      \onslide*<6>{\providecommand\step{5}\input{diagrams/backtrace/scanstack.tex}}%
+    \end{column}
+  \end{columns}
+\end{frame}
+
 % Duplicate of previous-previous slide
 \begin{frame}{Backtraces}{Continuing on \funcname{caml\_stash\_backtrace}}
   \begin{columns}[c]
@@ -241,8 +267,8 @@
     \begin{column}{0.5\textwidth}
       \raggedleft
       \onslide*<1>{\listStashBacktrace[highlightlines={114-115}]{}}
-      \onslide*<2>{\providecommand\step{3}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<3>{\providecommand\step{4}\input{diagrams/backtrace/backtrace.tex}}
+      \onslide*<2>{\providecommand\step{3}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<3>{\providecommand\step{4}\input{diagrams/backtrace/backtrace.tex}}%
     \end{column}
   \end{columns}
 \end{frame}
@@ -385,15 +411,15 @@
     \end{column}
     \begin{column}{0.45\textwidth}
       \raggedleft
-      \onslide*<1>{\providecommand\step{6}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<2>{\providecommand\step{6}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<3>{\providecommand\step{7}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<4>{\providecommand\step{8}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<5>{\providecommand\step{9}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<6>{\providecommand\step{10}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<7>{\providecommand\step{11}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<8>{\providecommand\step{12}\input{diagrams/backtrace/backtrace.tex}}
-      \onslide*<9>{\providecommand\step{13}\input{diagrams/backtrace/backtrace.tex}}
+      \onslide*<1>{\providecommand\step{6}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<2>{\providecommand\step{6}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<3>{\providecommand\step{7}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<4>{\providecommand\step{8}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<5>{\providecommand\step{9}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<6>{\providecommand\step{10}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<7>{\providecommand\step{11}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<8>{\providecommand\step{12}\input{diagrams/backtrace/backtrace.tex}}%
+      \onslide*<9>{\providecommand\step{13}\input{diagrams/backtrace/backtrace.tex}}%
     \end{column}
   \end{columns}
 \end{frame}

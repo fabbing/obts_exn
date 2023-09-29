@@ -11,6 +11,7 @@
 
 /presentation/src/ocaml/domain_state.h
 /presentation/src/ocaml/domain_state_abbr.h
+/presentation/src/ocaml/domain_state_backtrace.h
 
 
 /src/**/*.annot

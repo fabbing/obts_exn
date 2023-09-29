@@ -1,0 +1,99 @@
+\begin{tikzpicture}[font=\sffamily\tiny]
+\input{../src/backtrace/gdb.out}
+
+\newcommand\trapExnAEnd{\xinteval{\trapExnABegin - 2 * \wordSize}}
+\newcommand\trapExnBEnd{\xinteval{\trapExnBBegin - 2 * \wordSize}}
+\newcommand\trapExnCEnd{\xinteval{\trapExnCBegin - 2 * \wordSize}}
+
+\begin{stackDiagram}[yFactor=0.35,showAddress=true]{\frameMainBegin}{\frameDefinitelyEnd}
+\callStack
+
+\begin{funFrame}[name=main,color=GreenYellow]{\frameMainBegin}{\frameMainEnd}
+\funReturnAddr{\frameMainRetaddr}
+\frameLocal{1}{\frameMainLocalOne}
+\end{funFrame}
+
+\trapFrame[name=ExnC,handler=\trapExnCHandler,next=\trapExnCNext,color=WildStrawberry]{\trapExnCBegin}
+\coordAtRight{exnCtrap}{\exnHandlerAfterExnCTrap}
+
+
+\trapFrame[name=ExnB,handler=\trapExnBHandler,next=\trapExnBNext,color=OrangeRed]{\trapExnBBegin}
+\coordAtRight{exnBtrap}{\exnHandlerAfterExnBTrap}
+
+\begin{funFrame}[name=maybe,color=YellowGreen]{\frameMaybeBegin}{\frameMaybeEnd}
+\funReturnAddr{\frameMaybeRetaddr}
+\frameLocal{1}{\frameMaybeLocalOne}
+\end{funFrame}
+
+\begin{funFrame}[name=probably,color=Green]{\frameProbablyBegin}{\frameProbablyEnd}
+\funReturnAddr{\frameProbablyRetaddr}
+\frameLocal{1}{\frameProbablyLocalOne}
+\end{funFrame}
+
+
+\trapFrame[name=ExnA,handler=\trapExnAHandler,next=\trapExnANext,color=Red]{\trapExnABegin}
+\coordAtRight{exnAtrap}{\exnHandlerAfterExnATrap}
+
+\begin{funFrame}[name=definitely,color=JungleGreen]{\frameDefinitelyBegin}{\frameDefinitelyEnd}
+\funReturnAddr{\frameDefinitelyRetaddr}
+\frameLocal{1}{\frameDefinitelyLocalOne}
+\end{funFrame}
+
+\begin{funFrame}[color=SeaGreen]{\frameCamlRaiseExnBegin}{\frameCamlRaiseExnEnd}
+\funReturnAddr{\frameCamlRaiseExnRetaddr}
+\end{funFrame}
+
+
+\coordinate (bottom) at ($(stackBL) + (0,-0.25)$);
+\domainStateBacktrace[pos=(bottom),yFactor=0.03]{\exnHandlerAfterExnATrap}{}{0}
+
+
+\newcommand\lineToNextFrame[2]{
+% #1 -> from
+% #2 -> to
+
+\tikzmath{
+  \Ax = 0;
+  \Ay = \yOffset{#1}; \Ay = \Ay + 0.5 * \yFactor;
+  \Bx = 0;
+  \By = \yOffset{#2}; \By = \By + 0.5 * \yFactor;
+  \Cx = 0;
+  \Cy = \yOffset{#2}; \Cy = \Cy - 0.5 * \yFactor;
+  \Lx = -0.08 * \xFactor;
+  \Ly = (\Ay + \By) / 2;
+}
+    
+\node (plus) [draw,circle,fill=white,inner sep=0,label={above,rotate=90:framesize}] at (\Lx,\Ly) { + };
+
+\draw [out=180,in=-90] (\Ax,\Ay) to (plus.south);
+\draw [out=90,in=180] (plus.north) to (\Bx,\By);
+
+\draw [->,>=stealth,out=180,in=180,looseness=1.5] (\Bx,\By) to (\Cx,\Cy);
+
+\coordinate (TL) at ($ (0,\Cy+0.5*\yFactor) + (0.06,-0.06) $);
+\coordinate (BR) at ($ (\xFactor,\Cy-0.5*\yFactor) + (-0.4,0.06) $);
+\node [draw,thick,color=red,rounded corners=2,fit=(TL) (BR),inner sep=0] {};
+}
+
+\ifthenelse{\step<3}{
+\lineToNextFrame{\frameDefinitelyEnd}{\trapExnAEnd}
+}{}
+
+\ifthenelse{\step=2}{
+\lineToNextFrame{\trapExnAEnd}{\frameMaybeEnd}
+}{}
+
+\ifthenelse{\step>2}{
+\lineToNextFrame{\frameProbablyEnd}{\frameMaybeEnd}
+}{}
+
+\ifthenelse{\step>3}{
+\lineToNextFrame{\frameMaybeEnd}{\trapExnBEnd}
+}{}
+
+\ifthenelse{\step=5}{
+\lineToNextFrame{\trapExnBEnd}{\frameEntryEnd}
+}{}
+
+\end{stackDiagram}
+\end{tikzpicture}
