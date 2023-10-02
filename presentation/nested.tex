@@ -29,8 +29,8 @@
 \item<1-> \funcname{main} installs the trap for \typename{ExnC}
 \begin{itemize}
 \item<2-> Pushes address of \typename{ExnC} handler
-\item<2-> Saves the current value of \localname{domain\_state->exn\_hanlder} into the trap
-\item<2-> Updates \localname{domain\_state->exn\_hanlder} to point to \typename{ExnC} trap
+\item<2-> Saves the current value of \localname{domain\_state->exn\_handler} into the trap
+\item<2-> Updates \localname{domain\_state->exn\_handler} to point to \typename{ExnC} trap
 \end{itemize}
 \end{itemize}
 }%
@@ -56,8 +56,8 @@
 \item<1-> \funcname{main} now installs the trap for \typename{ExnB}
 \begin{itemize}
 \item<2-> Pushes address of \typename{ExnB} handler
-\item<2-> Saves the current value of \localname{domain\_state->exn\_hanlder}, which is pointing to \typename{ExnC} into the trap
-\item<4-> Updates \localname{domain\_state->exn\_hanlder} to point to \typename{ExnB} trap
+\item<2-> Saves the current value of \localname{domain\_state->exn\_handler}, which is pointing to \typename{ExnC} into the trap
+\item<4-> Updates \localname{domain\_state->exn\_handler} to point to \typename{ExnB} trap
 \end{itemize}
 \end{itemize}
 }
@@ -79,7 +79,7 @@
 
 \begin{frame}{OCaml exception trap}
 \begin{itemize}
-\item Traps form a linked list of exception handlers whose head is \localname{domain\_state->exn\_hanlder}
+\item Traps form a linked list of exception handlers whose head is \localname{domain\_state->exn\_handler}
 \item On amd64, an exception trap could be represented with this C structure
 \end{itemize}
 \bigskip
@@ -129,7 +129,7 @@
 \item \funcname{definitely\_raise} raises \typename{ExnC}
 \begin{itemize}
 \item Loads the \typename{ExnC} exception value into \regname{RAX} % FIXME phrasing
-\item Restores \regname{RSP} to the value of \localname{domain\_state->exn\_hanlder}
+\item Restores \regname{RSP} to the value of \localname{domain\_state->exn\_handler}
 \end{itemize}
 \end{itemize}
 }%
@@ -155,9 +155,9 @@
 \item \funcname{definitely\_raise} raises \typename{ExnC}
 \begin{itemize}
 \item Loads the \typename{ExnC} exception value into \regname{RAX} % FIXME phrasing
-\item Restores \regname{RSP} to the value of \localname{domain\_state->exn\_hanlder}
+\item Restores \regname{RSP} to the value of \localname{domain\_state->exn\_handler}
 % TODO /gray
-\item Updates \localname{domain\_state->exn\_hanlder} to the next handler: \typename{ExnB} handler
+\item Updates \localname{domain\_state->exn\_handler} to the next handler: \typename{ExnB} handler
 \end{itemize}
 \end{itemize}
 }%
@@ -183,8 +183,8 @@
 \item \funcname{definitely\_raise} raises \typename{ExnC}
 \begin{itemize}
 \item Loads the \typename{ExnC} exception value into \regname{RAX} % FIXME phrasing
-\item Restores \regname{RSP} to the value of \localname{domain\_state->exn\_hanlder}
-\item Updates \localname{domain\_state->exn\_hanlder} to the next handler: \typename{ExnB} handler
+\item Restores \regname{RSP} to the value of \localname{domain\_state->exn\_handler}
+\item Updates \localname{domain\_state->exn\_handler} to the next handler: \typename{ExnB} handler
 % TODO /gray
 \item Loads the address of \typename{ExnA} handler and jumps to it
 \end{itemize}
@@ -216,8 +216,8 @@
 \item \funcname{definitely\_raise} raises \typename{ExnC}
 \begin{itemize}
 \item Loads the \typename{ExnC} exception value into \regname{RAX} % FIXME phrasing
-\item Restores \regname{RSP} to the value of \localname{domain\_state->exn\_hanlder}
-\item Updates \localname{domain\_state->exn\_hanlder} to the next handler: \typename{ExnB} handler
+\item Restores \regname{RSP} to the value of \localname{domain\_state->exn\_handler}
+\item Updates \localname{domain\_state->exn\_handler} to the next handler: \typename{ExnB} handler
 \item Loads the address of \typename{ExnA} handler and jumps to it
 % TODO /gray
 \item \typename{ExnA} handler is executed
