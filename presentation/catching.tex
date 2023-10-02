@@ -239,7 +239,7 @@
 \begin{itemize}
 \item<1-> \typename{caml\_domain\_state} is a C structure part of the runtime
 \item<1-> It holds information useful to the runtime to manage a domain (each domain has its \typename{caml\_domain\_state})
-\item<3-> \localname{exn\_hanlder} is a pointer to the \emph{last} installed \typename{trap}
+\item<3-> \localname{exn\_handler} is a pointer to the \emph{last} installed \typename{trap}
 \end{itemize}
 }
 \onslide*<2>{\mintc[lastline=32]{src/ocaml/domain\_state.h}}
@@ -287,7 +287,7 @@
 \item The address of the handler's code is pushed onto the stack
 \item The value of \localname{exn\_handler} from \typename{caml\_domain\_state} is pushed onto the stack
 % TODO /grey color
-\item \localname{domain\_state->exn\_hanlder} has to point to the last installed trap
+\item \localname{domain\_state->exn\_handler} has to point to the last installed trap
 \item Its value is updated to the just-constructed trap's address
 \end{itemize}
 }
@@ -386,7 +386,7 @@
 \begin{column}{0.5\textwidth}
 \only<1>{
 \begin{itemize}
-\item \localname{domain\_state->exn\_hanlder} is restored to its previous value from the trap
+\item \localname{domain\_state->exn\_handler} is restored to its previous value from the trap
 \end{itemize}
 }%
 \only<2>{
@@ -410,7 +410,7 @@
 \only<1>{
 \begin{itemize}
 % TODO grey
-\item \localname{domain\_state->exn\_hanlder} is restored to its previous value from the trap
+\item \localname{domain\_state->exn\_handler} is restored to its previous value from the trap
 % TODO /grey
 \item Discards the exception handler code address
 \end{itemize}
